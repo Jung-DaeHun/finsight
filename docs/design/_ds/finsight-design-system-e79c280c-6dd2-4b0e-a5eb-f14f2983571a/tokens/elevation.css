@@ -1,0 +1,9 @@
+:root{
+--shadow-none:none;
+--divider:1px solid var(--hairline);
+--shadow-inset-bottom:inset 0 -1px 0 var(--hairline-soft);
+--focus-border:2px solid var(--ink);
+--focus-halo:0 0 0 12px var(--soft-cloud);
+--swatch-ring-active:0 0 0 2px var(--canvas),0 0 0 4px var(--ink);
+--swatch-ring-light:0 0 0 1px var(--hairline);
+}

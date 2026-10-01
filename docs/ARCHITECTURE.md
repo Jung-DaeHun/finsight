@@ -12,6 +12,7 @@ src/
 │   │   ├── page.tsx                 # 업로드 + 기록 + 빈 상태/샘플
 │   │   └── analyses/[id]/page.tsx   # 결과
 │   ├── settings/page.tsx
+│   ├── sample/page.tsx              # 공개 샘플 결과 (LLM 호출 없음)
 │   ├── auth/callback/route.ts       # OAuth code 교환
 │   ├── auth/confirm/route.ts        # 이메일 인증·비밀번호 재설정 (token_hash)
 │   ├── api/                         # 5.4 참고
@@ -24,6 +25,7 @@ src/
 │   ├── analysis/     # summarize, detect, monthlyTrend (순수 함수)
 │   ├── plan.ts       # resolvePlan, limits, toAnalysisView
 │   ├── api-error.ts  # apiError(code, status)
+│   ├── format.ts     # 원화 금액·날짜 문자열 표기 (순수 함수)
 │   └── log.ts        # logError(event, meta) — 파일 내용 기록 금지
 ├── services/
 │   ├── claude.ts
@@ -68,7 +70,7 @@ supabase/migrations/
 
 ### 5.2.2 실행 시간·정체 복구
 
-- 분석 라우트 `maxDuration = 300`. Claude SDK는 호출별 `timeout`과 `maxRetries: 1`을 설정한다. 값은 6단계에서 Sonnet 5.5·Opus 5.5의 실제 응답 시간(가맹점 100개 분류 기준)을 재서 정하고, Free 최대 입력(1파일·1,200행, Sonnet)과 Pro 최대 입력(3파일·3,600행, Opus)이 각각 240초 안에 끝나는지 확인한다. 넘으면 배치 크기·동시 요청 수를 조정한다.
+- 분석 라우트 `maxDuration = 300`. Claude SDK는 호출별 `timeout`과 `maxRetries: 1`을 설정한다. 값은 5단계(`claude-service`)에서 잠정값을 상수로 두고, 15단계(`go-live`)에서 Sonnet 5.5·Opus 5.5의 실제 응답 시간(가맹점 100개 분류 기준)을 재서 확정한다. 이때 Free 최대 입력(1파일·1,200행, Sonnet)과 Pro 최대 입력(3파일·3,600행, Opus)이 각각 240초 안에 끝나는지 확인한다. 넘으면 배치 크기·동시 요청 수를 조정한다.
 - 대시보드·분석 상세·업로드·삭제의 서버 진입점은 `recoverStaleAnalyses(userId)`를 호출한다: `UPDATE analyses SET status='failed', error_code='timeout' WHERE user_id AND status='processing' AND created_at < now() - 6분`. 기준(6분)이 최대 실행 시간(5분)보다 길어 아직 실행 중인 요청을 실패로 바꾸지 않는다.
 - 늦게 끝난 요청은 `completeAnalysis`의 `status='processing'` 조건에 걸려 아무것도 저장하지 못한다. 거래 insert·완료 전환·사용량 기록이 한 트랜잭션이라 강제 종료돼도 일부 거래만 남지 않는다. 읽기에는 `completed` 분석의 거래만 사용한다.
 - 클라이언트 연결 종료를 분석 취소로 연결하지 않는다. 연결 종료 후에도 처리가 끝까지 도는지는 배포 환경에서 확인한다.
@@ -290,12 +292,12 @@ toAnalysisView(input: { row: AnalysisRow; transactions: Transaction[]; trend: Mo
 - 월 고정비: 개발 중 $0 → 결제를 켜는 시점 Vercel Pro $20 (Hobby는 상업적 이용 금지) → Supabase Pro $25는 필요할 때
 - Anthropic 콘솔에 월 사용 한도 설정
 - 환경 변수: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `ANTHROPIC_API_KEY`, `CLAUDE_MODEL_FREE`, `CLAUDE_MODEL_PRO`, `POLAR_ACCESS_TOKEN`, `POLAR_WEBHOOK_SECRET`, `POLAR_PRO_PRODUCT_ID`, `POLAR_SERVER`, `NEXT_PUBLIC_APP_URL`, `MOCK_SERVICES` (예: `claude,polar`, 실제 전환 시 삭제)
-- Supabase 프로젝트는 2개: **개발용**(4~12단계 배포·통합 테스트, 로컬 `.env.local`), **운영용**(13단계에서 생성). 통합 테스트는 운영 프로젝트에 절대 연결하지 않는다
+- Supabase 프로젝트는 2개: **개발용**(6~14단계 배포·통합 테스트, 로컬 `.env.local`), **운영용**(15단계에서 생성). 통합 테스트는 운영 프로젝트에 절대 연결하지 않는다
 - 사전 준비 (사용자):
   - 구현 시작 전: `! npx vercel login`
-  - 4단계 전: Supabase 개발 프로젝트 생성 + `! npx supabase login`, 키 3개를 `.env.local`에 기록
-  - 5단계 전: Google OAuth 클라이언트, Supabase 이메일 템플릿을 `token_hash` 방식으로 수정
-  - 13단계 전: Supabase 운영 프로젝트, Anthropic API 키, Polar 샌드박스 + Pro 상품
+  - 6단계 전: Supabase 개발 프로젝트 생성 + `! npx supabase login`, 키 3개를 `.env.local`에 기록
+  - 7단계 전: Google OAuth 클라이언트, Supabase 이메일 템플릿을 `token_hash` 방식으로 수정
+  - 15단계 전: Supabase 운영 프로젝트, Anthropic API 키, Polar 샌드박스 + Pro 상품
 
 ---
 
@@ -306,21 +308,23 @@ toAnalysisView(input: { row: AnalysisRow; transactions: Transaction[]; trend: Mo
 | # | step | 내용 | 관련 시나리오 |
 |---|---|---|---|
 | 0 | `project-setup` | Next.js 16, Tailwind, Vitest, ESLint, 보안 헤더, `vercel link`, `MOCK_SERVICES` env, `deploy.config.json`에 운영 도메인 기록, `deploy`·`smoke` 스크립트, **첫 배포** | – |
-| 1 | `core-types` | 도메인·ReadRowsResult·AnalysisView 타입, 에러 코드·`messages/errors.ts`, `lib/plan.ts`, 직렬화 권한 테스트 | 3.4, 6.1, R4, R8 |
+| 1 | `core-types` | 도메인·ReadRowsResult·AnalysisView 타입, 에러 코드·`messages/errors.ts`, `lib/plan.ts`, `api-error`·`log`, 직렬화 권한 테스트 | 3.4, 6.1, R4, R8 |
 | 2 | `sheet-parsing` | readRows·normalize + 엄격 디코딩·시트 1,200행 상한, 경계 fixture | E1~E17, R3, R6, R7 |
 | 3 | `analysis-logic` | summarize·detect·monthlyTrend, 전월 비교 | 3.1, 3.2, E16 |
-| 4 | `db-schema` | 마이그레이션(RLS·grants 회수·부분 unique index·완료 RPC·Storage), `supabase db push`(개발 프로젝트), `vercel env add`로 Supabase 키 3개, `lib/data` 소유권 래퍼, 통합 테스트(권한 차단·완료 RPC) | 7절, R1, R2, R4, R5 |
-| 5 | `auth-flow` | `proxy.ts`, 로그인·가입·재설정, `/auth/callback`, `/auth/confirm` | J1 |
-| 6 | `claude-service` | 실제 + fixture mock 매핑(원화 열 판정 포함)·분류·인사이트, **Sonnet·Opus 응답 시간 실측 → timeout·배치 크기 결정** | E4, E7, E10, E11, R5, R7 |
-| 7 | `analysis-create` | `analysis-pipeline`, `POST /api/analyses`, 시작·정체 복구·완료·실패 처리 | J2, 2.1~2.5, 5.1, 5.2, R2, R3, R5 |
-| 8 | `analysis-read-delete` | `getAnalysisView`(결과 조회), `DELETE /api/analyses/[id]`, 인사이트 라우트, `services/deletion.ts`(분석 삭제) | 3.4, 5.3, R1, R4, R8 |
-| 9 | `dashboard-ui` | 업로드 폼, 빈 상태·샘플, 거래 목록·추이·전월 대비·Pro 잠금 카드·티저·인사이트 | J2, J3, R8 |
-| 10 | `billing` | `services/polar.ts` 실제 + mock(체크아웃 시 바로 구독 활성화), checkout·portal·webhook, 결제 확인 새로고침 | J4, J6 |
-| 11 | `settings` | 구독 상태, 분석 삭제, 회원 탈퇴(Polar → Storage → auth 순서, 재시도) | J7, R1 |
-| 12 | `landing` | 랜딩 + 요금제 | J1 |
-| 13 | `go-live` | 운영 Supabase 생성·`db push`, 실제 키 등록(`vercel env add`), `MOCK_SERVICES` 삭제, Polar 웹훅 URL 등록, 연결 종료 후 처리 확인, 최종 배포, 계정 2개·Free/Pro 수동 체크리스트 | 7절, R1~R8 |
+| 4 | `ui-kit` | 디자인 토큰·폰트(`globals.css`), `components/ui/` 공용 컴포넌트, PublicHeader·AppHeader, 데모 모드 띠, `error.tsx`·`not-found.tsx`, `lib/format.ts` | – |
+| 5 | `claude-service` | 실제 + fixture mock 매핑(원화 열 판정 포함)·분류·인사이트, timeout·배치 크기 **잠정값** 상수화, 응답 시간 실측 스크립트 | E4, E7, E10, E11, R5, R7 |
+| 6 | `db-schema` | 마이그레이션(RLS·grants 회수·부분 unique index·완료 RPC·Storage), `supabase db push`(개발 프로젝트), `vercel env add`로 Supabase 키 3개, `lib/supabase`, `lib/data` 소유권 래퍼, 통합 테스트(권한 차단·완료 RPC) | 7절, R1, R2, R4, R5 |
+| 7 | `auth-flow` | `proxy.ts`, 로그인·가입·재설정 화면, `/auth/callback`, `/auth/confirm` | J1 |
+| 8 | `analysis-create` | `analysis-pipeline`, `POST /api/analyses`, 시작·정체 복구·완료·실패 처리 | J2, 2.1~2.5, 5.1, 5.2, R2, R3, R5 |
+| 9 | `analysis-read-delete` | `getAnalysisView`(결과 조회), `DELETE /api/analyses/[id]`, 인사이트 라우트, `services/deletion.ts`(분석 삭제) | 3.4, 5.3, R1, R4, R8 |
+| 10 | `dashboard-upload` | 대시보드: 사용량 미터, 빈 상태, 분석 목록, Free 잠금 카드, 업로드 폼, 분석 중 화면 | J2, 2.3, 2.4, 5.1, 5.2 |
+| 11 | `result-view` | 결과 페이지(KPI·카테고리·가맹점·거래 목록·추이·전월 대비·Pro 잠금 카드·티저·인사이트), `sample/analysis.json`, 공개 `/sample` | J3, 3.3, 3.4, R8 |
+| 12 | `billing` | `services/polar.ts` 실제 + mock(체크아웃 시 바로 구독 활성화), checkout·portal·webhook, 결제 확인 새로고침 | J4, J6 |
+| 13 | `settings` | 구독 상태, 분석 삭제, 회원 탈퇴(Polar → Storage → auth 순서, 재시도) | J7, R1 |
+| 14 | `landing` | 랜딩 + 요금제 | J1 |
+| 15 | `go-live` | 운영 Supabase 생성·`db push`, 실제 키 등록(`vercel env add`), `MOCK_SERVICES` 삭제, Polar 웹훅 URL 등록, **Claude 응답 시간 실측 → timeout·배치 크기 확정**, 연결 종료 후 처리 확인, 최종 배포, 계정 2개·Free/Pro 수동 체크리스트 | 7절, R1~R8 |
 
-0~3·6단계는 외부 계정 없이 진행 가능. 4~12단계는 Supabase 개발 프로젝트가 필요하고 Claude·Polar는 mock으로 진행·배포한다. 13단계는 모든 실제 키가 필요하다. 준비가 안 됐으면 `blocked`.
+0~5단계는 외부 계정 없이 진행 가능. 6~14단계는 Supabase 개발 프로젝트가 필요하고 Claude·Polar는 mock으로 진행·배포한다. 15단계는 모든 실제 키가 필요하다. 준비가 안 됐으면 `blocked`.
 
 ### 11.2 배포 전략 (Vercel CLI)
 
@@ -336,7 +340,7 @@ npm run lint && npm run build && npm run test
 npm run deploy     # 프로덕션 URL 갱신
 npm run smoke      # prodUrl 200 확인
 ```
-4단계부터는 `npm run test:integration`(개발 Supabase 대상)도 AC에 포함한다. 출시 전이라 사용자가 없으므로 프리뷰 대신 프로덕션 URL 하나를 계속 갱신한다.
+6단계부터는 `npm run test:integration`(개발 Supabase 대상)도 AC에 포함한다. 출시 전이라 사용자가 없으므로 프리뷰 대신 프로덕션 URL 하나를 계속 갱신한다.
 
 **mock 모드 (`MOCK_SERVICES`):**
 - `services/claude.ts`, `services/polar.ts`가 env를 보고 실제/mock 구현을 고른다. 자동 감지(키가 없으면 mock)는 하지 않는다 — 운영에서 키 누락 시 가짜 결과가 조용히 나가는 것을 막기 위해 명시적 env만 인정
@@ -351,18 +355,18 @@ npm run smoke      # prodUrl 200 확인
 | step 완료 후 | 배포된 URL에서 확인 가능한 것 |
 |---|---|
 | 0 | 빈 랜딩 (배포 파이프라인 확인) |
-| 5 | 가입·로그인·비밀번호 재설정 (개발 Supabase) |
-| 9 | 업로드 → mock 분석 → 결과·차트·잠금 카드·샘플 |
-| 10 | mock 결제로 Pro 전환 → Pro 기능 |
-| 12 | 랜딩 포함 전체 흐름 (mock) |
-| 13 | 운영 Supabase + 실제 Claude·Polar 샌드박스 |
+| 7 | 가입·로그인·비밀번호 재설정 (개발 Supabase) |
+| 11 | 업로드 → mock 분석 → 결과·차트·잠금 카드·샘플 |
+| 12 | mock 결제로 Pro 전환 → Pro 기능 |
+| 14 | 랜딩 포함 전체 흐름 (mock) |
+| 15 | 운영 Supabase + 실제 Claude·Polar 샌드박스 |
 
 ## 12. 검증
-- 각 step의 AC: `npm run lint && npm run build && npm run test && npm run deploy && npm run smoke` (4단계부터 `npm run test:integration` 추가)
+- 각 step의 AC: `npm run lint && npm run build && npm run test && npm run deploy && npm run smoke` (6단계부터 `npm run test:integration` 추가)
 - 모든 시나리오 번호(J1~J7, E1~E17, R1~R8)가 11.1 표의 담당 step에 연결됐는지 확인
 - 배포 후 수동 확인: 이메일 가입(다른 기기에서 인증 링크) → 샘플 보기 → 국내 카드사 엑셀 업로드 → 결과 → Polar 샌드박스 결제 → Pro 기능 해제 → 포털에서 해지 → 회원 탈퇴
 - 사용자 A의 분석 ID로 B가 결과 페이지·DELETE/인사이트 API에 접근 시 404. Free·Pro 모두 모든 테이블 직접 SELECT/INSERT/UPDATE/DELETE 및 완료 RPC 실행이 거부되는지 확인
-- 자동 통합 테스트(개발 Supabase)는 **권한 차단**(anon·authenticated 토큰으로 모든 테이블 SELECT/INSERT/UPDATE/DELETE, 완료 RPC 실행 거부)과 **완료 RPC**(원자성, `processing` 아닐 때 0건, 사용량 1건 기록, 부분 unique index 위반)만 다룬다. 나머지는 단위 테스트와 13단계 수동 체크리스트로 확인한다. 단위 테스트에서는 Claude·Polar를 mock한다
+- 자동 통합 테스트(개발 Supabase)는 **권한 차단**(anon·authenticated 토큰으로 모든 테이블 SELECT/INSERT/UPDATE/DELETE, 완료 RPC 실행 거부)과 **완료 RPC**(원자성, `processing` 아닐 때 0건, 사용량 1건 기록, 부분 unique index 위반)만 다룬다. 나머지는 단위 테스트와 15단계 수동 체크리스트로 확인한다. 단위 테스트에서는 Claude·Polar를 mock한다
 
 ### 12.1 리뷰 위험별 필수 검증
 

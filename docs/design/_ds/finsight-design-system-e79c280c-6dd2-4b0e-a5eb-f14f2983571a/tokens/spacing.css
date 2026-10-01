@@ -1,0 +1,8 @@
+:root{
+--space-xxs:2px;--space-xs:4px;--space-sm:8px;--space-md:12px;--space-lg:18px;--space-xl:24px;--space-xxl:30px;--space-section:48px;
+--container-max:1440px;--gutter:48px;--grid-gutter:8px;--sidebar-width:220px;
+--hit-target:44px;--control-height:48px;--chip-height:40px;--icon-button:40px;
+}
+@media (min-width:1920px){:root{--gutter:80px}}
+@media (max-width:1023px){:root{--space-section:32px;--gutter:36px}}
+@media (max-width:599px){:root{--space-section:24px;--gutter:20px;--grid-gutter:4px}}

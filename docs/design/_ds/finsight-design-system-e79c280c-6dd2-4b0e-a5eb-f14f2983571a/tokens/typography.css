@@ -1,0 +1,34 @@
+:root{
+--font-display:"Bebas Neue","Helvetica Neue",Helvetica,Arial,sans-serif;
+--font-heading:"Inter","Helvetica Neue",Helvetica,Arial,sans-serif;
+--font-ui:"Inter","Helvetica Neue",Helvetica,Arial,sans-serif;
+--font-body:"Inter","Helvetica Neue",Helvetica,Arial,sans-serif;
+--font-legal:"Helvetica Neue",Helvetica,Arial,sans-serif;
+--fw-regular:400; /* @kind font */
+--fw-medium:500; /* @kind font */
+--fw-bold:700; /* @kind font */
+
+--fs-96:96px;--fs-32:32px;--fs-24:24px;--fs-16:16px;--fs-14:14px;--fs-12:12px;--fs-9:9px;
+--lh-display:0.9; /* @kind font */
+--lh-tight:1.2; /* @kind font */
+--lh-body:1.5; /* @kind font */
+--lh-relaxed:1.75; /* @kind font */
+
+--type-display-campaign-size:96px;
+--type-display-campaign:400 var(--type-display-campaign-size)/0.9 var(--font-display);
+--type-heading-xl:500 32px/1.2 var(--font-heading);
+--type-heading-lg:500 24px/1.2 var(--font-heading);
+--type-heading-md:500 16px/1.75 var(--font-heading);
+--type-body-md:400 16px/1.5 var(--font-body);
+--type-body-strong:500 16px/1.5 var(--font-ui);
+--type-button-lg:500 24px/1.2 var(--font-ui);
+--type-button-md:500 16px/1.5 var(--font-ui);
+--type-button-sm:500 14px/1.5 var(--font-ui);
+--type-link-md:500 16px/1.75 var(--font-body);
+--type-caption-md:500 14px/1.5 var(--font-ui);
+--type-caption-sm:500 12px/1.5 var(--font-ui);
+--type-utility-xs:500 9px/1.75 var(--font-legal);
+--display-letter-spacing:-0.005em; /* @kind font */
+}
+@media (max-width:960px){:root{--type-display-campaign-size:64px}}
+@media (max-width:599px){:root{--type-display-campaign-size:48px}}
