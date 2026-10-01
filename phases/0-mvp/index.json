@@ -13,7 +13,9 @@
     {
       "step": 1,
       "name": "core-types",
-      "status": "pending"
+      "status": "completed",
+      "summary": "도메인·에러 타입, 한국어 문구, API·로그 헬퍼, Free/Pro 허용 필드 직렬화 구현; lint·build·41개 테스트·배포·운영 HTTP 200 확인",
+      "started_at": "2026-10-01T21:13:03+0900"
     },
     {
       "step": 2,
