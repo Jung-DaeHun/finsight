@@ -1,15 +1,15 @@
 # 프로젝트: FinSight
 
 카드 명세서·거래내역 파일(CSV/엑셀)을 Claude로 분석해 보여주는 핀테크 SaaS (MVP).
-상세 계획: `plan.md` · 문서: `docs/PRD.md`, `docs/USER_FLOW.md`, `docs/ARCHITECTURE.md`, `docs/ADR.md`, `docs/UI_GUIDE.md`
+문서: `docs/PRD.md`, `docs/USER_FLOW.md`, `docs/ARCHITECTURE.md`, `docs/ADR.md`, `docs/UI_GUIDE.md`
 
 ## 기술 스택
 - Next.js 16 (App Router, `proxy.ts`), TypeScript strict mode
 - Tailwind CSS, Recharts
 - Supabase (`@supabase/ssr`, publishable/secret 키, Auth·Postgres·Storage)
-- Claude API (`@anthropic-ai/sdk`, 모델은 `CLAUDE_MODEL` env, 기본 `claude-opus-5-5`)
+- Claude API (`@anthropic-ai/sdk`). 플랜별 모델: Free `CLAUDE_MODEL_FREE`(기본 `claude-sonnet-5-5`), Pro `CLAUDE_MODEL_PRO`(기본 `claude-opus-5-5`)
 - Polar (`@polar-sh/nextjs`, 구독 결제)
-- next-intl (쿠키 기반 ko/en)
+- 한국어 전용 (i18n 라이브러리 없음), 원화(KRW) 전용
 - SheetJS 0.20.3 (CDN tarball), zod
 - Vitest + Testing Library
 - Vercel (CLI 배포)
@@ -18,7 +18,7 @@
 - CRITICAL: Claude·Polar 등 외부 API는 `src/services/`에서만 호출할 것. 컴포넌트나 `lib/`에서 SDK를 직접 import하지 말 것
 - CRITICAL: `SUPABASE_SECRET_KEY`, `ANTHROPIC_API_KEY`, `POLAR_*` 시크릿은 서버 코드에서만 사용할 것. `NEXT_PUBLIC_` 접두사를 붙이지 말 것. admin 클라이언트와 `lib/data`에는 `import 'server-only'`
 - CRITICAL: 권한 판단은 `supabase.auth.getClaims()`로 할 것. `getSession()`으로 권한을 판단하지 말 것
-- CRITICAL: `analyses`·`uploads`·`transactions`·`analysis_usage`는 클라이언트에서 직접 접근하지 말 것. 서버의 `lib/data`에서만 조회하고, 모든 쿼리에 `user_id = claims.sub` 소유권 조건을 걸 것. `user_id`를 요청 본문 값에서 가져오지 말 것
+- CRITICAL: 모든 테이블은 클라이언트에서 직접 접근하지 말 것. 서버의 `lib/data`에서만 조회하고, 모든 쿼리에 `user_id = claims.sub` 소유권 조건을 걸 것. `user_id`를 요청 본문 값에서 가져오지 말 것
 - CRITICAL: 클라이언트로 보내는 분석 데이터는 `toAnalysisView`로 플랜별 허용 필드만 담을 것. DB row를 그대로 Client Component props나 API 응답에 넣지 말 것
 - CRITICAL: 거래 저장·분석 완료 전환·사용량 기록은 `completeAnalysis` RPC 한 곳에서만 수행할 것
 - CRITICAL: 구독 상태는 서명 검증된 Polar 웹훅으로만 변경할 것 (`MOCK_SERVICES`에 `polar`가 있을 때의 mock checkout만 예외)
@@ -30,7 +30,7 @@
 - CRITICAL: 통합 테스트를 운영 Supabase 프로젝트에 연결하지 말 것
 - Claude 응답은 structured outputs + zod 검증을 거친 뒤에만 사용
 - 순수 로직은 `src/lib/`, 도메인 타입·에러 코드는 `src/types/`, UI는 `src/components/`
-- 사용자에게 보이는 문자열은 `src/messages/{ko,en}.json`에 둘 것 (하드코딩 금지). API 실패 응답은 `{ error: { code } }`
+- 에러 코드 문구는 `src/messages/errors.ts` 한 곳에 둘 것. API 실패 응답은 `{ error: { code } }`
 - UI는 `docs/UI_GUIDE.md`를 따를 것
 
 ## 개발 프로세스
