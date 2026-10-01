@@ -40,7 +40,7 @@
       "status": "completed",
       "summary": "디자인 토큰·폰트, Button·IconButton·Badge·FilterChip·Field·Icon·Spinner·Toast·Wordmark·SectionHead·PageTitle·PublicHeader·AppHeader·DemoBanner, 포맷·오류 화면 구현; lint·build·215개 테스트·배포·운영 HTTP 200 확인",
       "started_at": "2026-10-02T01:50:35+0900",
-      "completed_at": "2026-10-02T01:59:00+0900"
+      "completed_at": "2026-10-02T01:59:25+0900"
     },
     {
       "step": 5,
