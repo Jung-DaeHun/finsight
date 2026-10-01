@@ -53,7 +53,9 @@
     {
       "step": 6,
       "name": "db-schema",
-      "status": "pending"
+      "status": "blocked",
+      "blocked_reason": ".env.local에 개발 Supabase 프로젝트의 NEXT_PUBLIC_SUPABASE_URL이 없습니다. URL을 추가한 뒤 Step 6을 다시 실행해야 합니다.",
+      "started_at": "2026-10-02T02:12:41+0900"
     },
     {
       "step": 7,
