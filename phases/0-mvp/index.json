@@ -48,7 +48,7 @@
       "status": "completed",
       "summary": "Claude structured outputs·zod 검증, fixture mock 매핑·분류·인사이트, 잠정 timeout 60초·재시도 1회·분류 100개/동시 2개, 실측 스크립트; lint·build·236개 테스트·배포·HTTP 200 확인",
       "started_at": "2026-10-02T01:59:25+0900",
-      "completed_at": "2026-10-02T02:11:33+0900"
+      "completed_at": "2026-10-02T02:12:41+0900"
     },
     {
       "step": 6,
