@@ -1,0 +1,41 @@
+{
+  "description": "FinSight 훅 — .claude/settings.json 과 같은 규칙. Windows는 PowerShell로 실행되므로 Git Bash를 직접 호출한다.",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$(git rev-parse --show-toplevel)/scripts/hooks/tdd-guard.sh\"",
+            "commandWindows": "& 'C:/Program Files/Git/bin/bash.exe' -c 'exec bash $(git rev-parse --show-toplevel)/scripts/hooks/tdd-guard.sh'; exit $LASTEXITCODE",
+            "statusMessage": "TDD 가드 확인"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$(git rev-parse --show-toplevel)/scripts/hooks/block-dangerous.sh\"",
+            "commandWindows": "& 'C:/Program Files/Git/bin/bash.exe' -c 'exec bash $(git rev-parse --show-toplevel)/scripts/hooks/block-dangerous.sh'; exit $LASTEXITCODE",
+            "statusMessage": "위험 명령 확인"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$(git rev-parse --show-toplevel)/scripts/hooks/stop-check.sh\"",
+            "commandWindows": "& 'C:/Program Files/Git/bin/bash.exe' -c 'exec bash $(git rev-parse --show-toplevel)/scripts/hooks/stop-check.sh'; exit $LASTEXITCODE",
+            "statusMessage": "lint · build · test"
+          }
+        ]
+      }
+    ]
+  }
+}
