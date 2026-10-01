@@ -1,0 +1,86 @@
+{
+  "project": "FinSight",
+  "phase": "0-mvp",
+  "steps": [
+    {
+      "step": 0,
+      "name": "project-setup",
+      "status": "pending"
+    },
+    {
+      "step": 1,
+      "name": "core-types",
+      "status": "pending"
+    },
+    {
+      "step": 2,
+      "name": "sheet-parsing",
+      "status": "pending"
+    },
+    {
+      "step": 3,
+      "name": "analysis-logic",
+      "status": "pending"
+    },
+    {
+      "step": 4,
+      "name": "ui-kit",
+      "status": "pending"
+    },
+    {
+      "step": 5,
+      "name": "claude-service",
+      "status": "pending"
+    },
+    {
+      "step": 6,
+      "name": "db-schema",
+      "status": "pending"
+    },
+    {
+      "step": 7,
+      "name": "auth-flow",
+      "status": "pending"
+    },
+    {
+      "step": 8,
+      "name": "analysis-create",
+      "status": "pending"
+    },
+    {
+      "step": 9,
+      "name": "analysis-read-delete",
+      "status": "pending"
+    },
+    {
+      "step": 10,
+      "name": "dashboard-upload",
+      "status": "pending"
+    },
+    {
+      "step": 11,
+      "name": "result-view",
+      "status": "pending"
+    },
+    {
+      "step": 12,
+      "name": "billing",
+      "status": "pending"
+    },
+    {
+      "step": 13,
+      "name": "settings",
+      "status": "pending"
+    },
+    {
+      "step": 14,
+      "name": "landing",
+      "status": "pending"
+    },
+    {
+      "step": 15,
+      "name": "go-live",
+      "status": "pending"
+    }
+  ]
+}

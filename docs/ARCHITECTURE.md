@@ -13,6 +13,7 @@ src/
 │   │   └── analyses/[id]/page.tsx   # 결과
 │   ├── settings/page.tsx
 │   ├── sample/page.tsx              # 공개 샘플 결과 (LLM 호출 없음)
+│   ├── terms/ privacy/              # 이용약관·개인정보처리방침 (정적, 수탁사·국가 명시)
 │   ├── auth/callback/route.ts       # OAuth code 교환
 │   ├── auth/confirm/route.ts        # 이메일 인증·비밀번호 재설정 (token_hash)
 │   ├── api/                         # 5.4 참고
@@ -96,7 +97,7 @@ supabase/migrations/
 - 모든 테이블에 RLS를 켜고, 마이그레이션에서 `anon`·`authenticated`의 테이블 권한을 **전부 회수**한다(정책 없음). 클라이언트는 어떤 테이블에도 직접 접근하지 않는다. `completeAnalysis` RPC는 `PUBLIC`·`anon`·`authenticated`의 EXECUTE를 회수하고 `service_role`에만 허용한다.
 - 모든 조회는 `server-only`인 `lib/data`에서 secret key로 한다. 이 클라이언트는 RLS를 우회하므로 **인증된 `claims.sub`와 row 소유권을 매번 검사**한다. ID 조회·삭제는 항상 `id = 요청 ID AND user_id = claims.sub`, 이력·파일 조회도 같은 사용자 조건을 사용한다. 알 수 없는 ID와 타인 ID는 동일한 404를 반환한다.
 - 조회 순서: 소유권 → 플랜 확인 → 필요한 거래/추이 조회 → `toAnalysisView` 직렬화. 결과 페이지(Server Component)와 인사이트 API는 같은 `lib/data` 경로를 사용한다. DB row 전체를 Client Component props에 전달하지 않는다.
-- 대시보드 기록 목록은 `id/status/createdAt`만 노출한다.
+- 대시보드 기록 목록은 `id/status/createdAt/errorCode`와 본인 파일명·총지출(`summary.totalSpend`)·기간만 노출한다. 거래·탐지·추이·인사이트는 넣지 않는다.
 - Free는 자신의 모든 분석을 열람하지만 일반 거래 필드와 탐지 건수만 받는다. `isRecurring`·`anomalyType`은 Pro 탐지 상세에만 포함하고, 저장되어 있던 인사이트·추이도 Free 응답에서 제거한다.
 
 ### 5.3.2 월 사용량
@@ -295,9 +296,9 @@ toAnalysisView(input: { row: AnalysisRow; transactions: Transaction[]; trend: Mo
 - Supabase 프로젝트는 2개: **개발용**(6~14단계 배포·통합 테스트, 로컬 `.env.local`), **운영용**(15단계에서 생성). 통합 테스트는 운영 프로젝트에 절대 연결하지 않는다
 - 사전 준비 (사용자):
   - 구현 시작 전: `! npx vercel login`
-  - 6단계 전: Supabase 개발 프로젝트 생성 + `! npx supabase login`, 키 3개를 `.env.local`에 기록
+  - 6단계 전: Supabase 개발 프로젝트 생성 + `! npx supabase login`, 키 3개와 `SUPABASE_DB_PASSWORD`를 `.env.local`에 기록
   - 7단계 전: Google OAuth 클라이언트, Supabase 이메일 템플릿을 `token_hash` 방식으로 수정
-  - 15단계 전: Supabase 운영 프로젝트, Anthropic API 키, Polar 샌드박스 + Pro 상품
+  - 15단계 전: Supabase 운영 프로젝트, Anthropic API 키, Polar 샌드박스 + Pro 상품, Polar 웹훅 엔드포인트(`{prodUrl}/api/webhooks/polar`) 등록. 운영 값은 `.env.go-live.local`에만 기록한다(`.env.local`은 개발 프로젝트 전용, 통합 테스트가 읽음)
 
 ---
 
@@ -321,8 +322,8 @@ toAnalysisView(input: { row: AnalysisRow; transactions: Transaction[]; trend: Mo
 | 11 | `result-view` | 결과 페이지(KPI·카테고리·가맹점·거래 목록·추이·전월 대비·Pro 잠금 카드·티저·인사이트), `sample/analysis.json`, 공개 `/sample` | J3, 3.3, 3.4, R8 |
 | 12 | `billing` | `services/polar.ts` 실제 + mock(체크아웃 시 바로 구독 활성화), checkout·portal·webhook, 결제 확인 새로고침 | J4, J6 |
 | 13 | `settings` | 구독 상태, 분석 삭제, 회원 탈퇴(Polar → Storage → auth 순서, 재시도) | J7, R1 |
-| 14 | `landing` | 랜딩 + 요금제 | J1 |
-| 15 | `go-live` | 운영 Supabase 생성·`db push`, 실제 키 등록(`vercel env add`), `MOCK_SERVICES` 삭제, Polar 웹훅 URL 등록, **Claude 응답 시간 실측 → timeout·배치 크기 확정**, 연결 종료 후 처리 확인, 최종 배포, 계정 2개·Free/Pro 수동 체크리스트 | 7절, R1~R8 |
+| 14 | `landing` | 랜딩 + 요금제, 이용약관·개인정보처리방침 정적 페이지 | J1 |
+| 15 | `go-live` | 운영 Supabase 생성·`db push`, 실제 키 등록(`vercel env add`), `MOCK_SERVICES` 삭제, Polar 웹훅 secret 등록, **Claude 응답 시간 실측 → timeout·배치 크기 확정**, 연결 종료 후 처리 확인, 최종 배포, 계정 2개·Free/Pro 수동 체크리스트 | 7절, R1~R8 |
 
 0~5단계는 외부 계정 없이 진행 가능. 6~14단계는 Supabase 개발 프로젝트가 필요하고 Claude·Polar는 mock으로 진행·배포한다. 15단계는 모든 실제 키가 필요하다. 준비가 안 됐으면 `blocked`.
 
