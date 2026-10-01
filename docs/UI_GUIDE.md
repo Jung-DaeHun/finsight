@@ -1,9 +1,9 @@
 # UI 디자인 가이드
 
 ## 디자인 원칙
-1. {원칙 1 — 예: "도구처럼 보여야 한다. 마케팅 페이지가 아니라 매일 쓰는 대시보드."}
-2. {원칙 2}
-3. {원칙 3}
+1. 도구처럼 보여야 한다. 랜딩을 제외하면 매달 열어보는 가계부 대시보드다.
+2. 숫자가 주인공이다. 금액은 크게, 정렬은 오른쪽, 폰트는 tabular-nums.
+3. 신뢰가 우선이다. 금융 데이터를 다루므로 화려함보다 차분함과 명확함을 택한다.
 
 ## AI 슬롭 안티패턴 — 하지 마라
 | 금지 사항 | 이유 |
@@ -15,62 +15,77 @@
 | 보라/인디고 브랜드 색상 | "AI = 보라색" 클리셰 |
 | 모든 카드에 동일한 rounded-2xl | 균일한 둥근 모서리는 템플릿 느낌 |
 | 배경 gradient orb (blur-3xl 원형) | 모든 AI 랜딩 페이지에 있는 장식 |
+| ✨ 반짝이 아이콘 | AI 기능 표시의 클리셰 |
 
 ## 색상
 ### 배경
 | 용도 | 값 |
 |------|------|
-| 페이지 | {예: #0a0a0a} |
-| 카드 | {예: #141414} |
+| 페이지 | #fafaf9 (stone-50) |
+| 카드 | #ffffff |
+| 구분선 | #e7e5e4 (stone-200) |
 
 ### 텍스트
 | 용도 | 값 |
 |------|------|
-| 주 텍스트 | {예: text-white} |
-| 본문 | {예: text-neutral-300} |
-| 보조 | {예: text-neutral-400} |
-| 비활성 | {예: text-neutral-500} |
+| 주 텍스트 | text-stone-900 |
+| 본문 | text-stone-700 |
+| 보조 | text-stone-500 |
+| 비활성 | text-stone-400 |
 
-### 데이터/시맨틱 색상
+### 브랜드/시맨틱 색상
 | 용도 | 값 |
 |------|------|
-| {긍정/성공} | {예: #22c55e} |
-| {부정/에러} | {예: #ef4444} |
-| {중립/기본} | {예: #525252} |
+| 포인트 (버튼, 링크, 강조) | #15803d (green-700) |
+| 지출 증가 / 이상거래 / 에러 | #dc2626 (red-600) |
+| 지출 감소 / 성공 | #15803d (green-700) |
+| 경고 (정기결제 알림) | #b45309 (amber-700) |
+| 중립 | #78716c (stone-500) |
+
+### 차트 카테고리 팔레트
+- 차트 색상은 `dataviz` 스킬 가이드로 검증된 팔레트를 `lib/chart-colors.ts` 한 곳에 정의하고 재사용한다.
 
 ## 컴포넌트
 ### 카드
 ```
-{예: rounded-lg bg-[#141414] border border-neutral-800 p-6}
+rounded-md bg-white border border-stone-200 p-5
 ```
 
 ### 버튼
 ```
-Primary: {예: rounded-lg bg-white text-black hover:bg-neutral-200}
-Text:    {예: text-neutral-500 hover:text-neutral-300}
+Primary: rounded-md bg-green-700 text-white px-4 py-2 text-sm font-medium hover:bg-green-800
+Secondary: rounded-md border border-stone-300 bg-white text-stone-900 px-4 py-2 text-sm hover:bg-stone-50
+Text:    text-stone-500 hover:text-stone-900
 ```
 
 ### 입력 필드
 ```
-{예: rounded-lg bg-neutral-900 border border-neutral-800 px-4 py-3}
+rounded-md bg-white border border-stone-300 px-3 py-2 text-sm focus:border-green-700 focus:outline-none
 ```
 
+### Pro 잠금 카드
+- 실제 카드와 같은 크기의 카드에 기능 설명 한 줄과 "Pro로 업그레이드" 버튼만 표시한다. 가짜 데이터를 흐리게 깔지 않는다.
+
 ## 레이아웃
-- 전체 너비: {예: max-w-5xl}
-- 정렬: {예: 좌측 정렬 기본. 중앙 정렬 금지}
-- 간격: {예: gap-3~4, 섹션 간 space-y-8}
+- 대시보드 너비: max-w-6xl, 랜딩: max-w-5xl
+- 정렬: 좌측 정렬 기본. 랜딩 히어로만 예외
+- 간격: 카드 간 gap-4, 섹션 간 space-y-8
+- 모바일(375px)에서 가로 스크롤 없이 동작
 
 ## 타이포그래피
+- 폰트: Pretendard (한/영 공용), 숫자는 `tabular-nums`
 | 용도 | 스타일 |
 |------|--------|
-| 페이지 제목 | {예: text-4xl font-semibold text-white} |
-| 카드 제목 | {예: text-sm font-medium text-neutral-400} |
-| 본문 | {예: text-sm text-neutral-300 leading-relaxed} |
+| 페이지 제목 | text-2xl font-semibold text-stone-900 |
+| 카드 제목 | text-sm font-medium text-stone-500 |
+| 핵심 금액 | text-3xl font-semibold tabular-nums text-stone-900 |
+| 본문 | text-sm text-stone-700 leading-relaxed |
 
 ## 애니메이션
-- {허용할 애니메이션만 나열. 예: fade-in (0.4s), slide-up (0.5s)}
-- {그 외 모든 애니메이션 금지}
+- 분석 중 상태의 진행 표시 (단순 스피너 또는 진행 바)
+- hover 색상 전환 (transition-colors 150ms)
+- 그 외 모든 애니메이션 금지
 
 ## 아이콘
-- {예: SVG 인라인, strokeWidth 1.5}
-- {예: 아이콘 컨테이너(둥근 배경 박스)로 감싸지 않는다}
+- lucide-react, strokeWidth 1.5, size 16~20
+- 아이콘 컨테이너(둥근 배경 박스)로 감싸지 않는다
