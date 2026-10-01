@@ -1,9 +1,27 @@
 #!/bin/bash
-# TDD Guard Hook — PreToolUse[Edit|Write]
+# TDD Guard Hook — PreToolUse[Edit|Write] (Claude) / PreToolUse[apply_patch] (Codex)
 # 구현 코드를 작성하려 할 때, 해당 모듈의 테스트 파일이 먼저 존재하는지 체크.
 # 테스트 없이 구현 코드를 작성하려 하면 차단.
 
 INPUT=$(cat)
+
+# Codex apply_patch: file_path 없이 패치 본문(tool_input.command)만 온다.
+# "*** Add File: 경로" / "*** Update File: 경로" 를 뽑아 파일마다 이 스크립트를 다시 실행하고,
+# 첫 deny 출력을 그대로 내보낸다. (경로는 세션 cwd 기준 상대경로)
+if [ "$(echo "$INPUT" | jq -r '.tool_name // empty' | tr -d '\r')" = "apply_patch" ]; then
+  CWD=$(echo "$INPUT" | jq -r '.cwd // empty' | tr -d '\r')
+  CWD="${CWD//\\//}"
+  while IFS= read -r REL; do
+    [ -z "$REL" ] && continue
+    OUT=$(jq -n --arg p "$CWD/$REL" '{tool_input: {file_path: $p}}' | bash "$0")
+    if [ -n "$OUT" ]; then
+      echo "$OUT"
+      exit 0
+    fi
+  done < <(echo "$INPUT" | jq -r '.tool_input.command // empty' | tr -d '\r' | sed -nE 's/^\*\*\* (Add|Update) File: (.*)$/\2/p')
+  exit 0
+fi
+
 FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty')
 # Windows 경로(C:\a\b.ts)를 슬래시로 정규화 — 아래 */dir/* 패턴과 dirname이 동작하도록
 FILE_PATH="${FILE_PATH//\\//}"
@@ -29,11 +47,11 @@ case "$FILE_PATH" in
     ;;
 esac
 
-# .claude/ 인프라(설정·훅·슬래시 커맨드)와 workflows/ 오케스트레이션 스크립트는 TDD 비대상 — 허용.
+# .claude/·.codex/ 인프라(설정·훅·슬래시 커맨드)와 workflows/ 오케스트레이션 스크립트는 TDD 비대상 — 허용.
 # 이유: 워크플로우 스크립트는 런타임이 주입하는 전역(agent/pipeline/log)에 의존하는 오케스트레이션
 #       정의로, lib/services 비즈니스 로직이 아니며 유닛 테스트를 붙일 수 없다.
 case "$FILE_PATH" in
-  */.claude/*|*/workflows/*)
+  */.claude/*|*/.codex/*|*/workflows/*)
     exit 0
     ;;
 esac
