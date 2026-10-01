@@ -1,0 +1,4 @@
+# 로컬 환경 파일은 업로드하지 않고 Vercel 환경 변수만 사용한다.
+.env*
+**/__pycache__/
+phases/**/step*-output.json

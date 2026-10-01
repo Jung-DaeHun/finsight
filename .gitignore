@@ -1,5 +1,7 @@
 node_modules/
 .next/
+.vercel/
+coverage/
 out/
 next-env.d.ts
 tsconfig.tsbuildinfo
@@ -7,6 +9,7 @@ tsconfig.tsbuildinfo
 # local environment variables and secrets
 .env
 .env.*
+.env*.local
 !.env.example
 
 # phase execution outputs

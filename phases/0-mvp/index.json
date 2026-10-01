@@ -5,7 +5,9 @@
     {
       "step": 0,
       "name": "project-setup",
-      "status": "pending"
+      "status": "completed",
+      "summary": "Next.js 16·Tailwind v4·ESLint·Vitest 기반, 보안 헤더와 배포·smoke 구성 완료; 운영 URL https://finsight-orcin-two.vercel.app (HTTP 200)",
+      "started_at": "2026-10-01T21:03:45+0900"
     },
     {
       "step": 1,
@@ -82,5 +84,6 @@
       "name": "go-live",
       "status": "pending"
     }
-  ]
+  ],
+  "created_at": "2026-10-01T21:03:45+0900"
 }
