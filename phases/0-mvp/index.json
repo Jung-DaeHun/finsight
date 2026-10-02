@@ -93,7 +93,10 @@
     {
       "step": 11,
       "name": "result-view",
-      "status": "pending"
+      "status": "error",
+      "started_at": "2026-10-02T18:45:47+0900",
+      "error_message": "[3회 시도 후 실패] Step did not update status",
+      "failed_at": "2026-10-02T19:22:46+0900"
     },
     {
       "step": 12,
