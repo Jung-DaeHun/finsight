@@ -71,7 +71,8 @@
       "name": "analysis-create",
       "status": "completed",
       "started_at": "2026-10-02T17:49:18+0900",
-      "summary": "소유권 기반 중복·업로드·완료 이력 래퍼, 원본 기록 후 Storage 저장, 다중 파일 동기 분석 파이프라인과 POST /api/analyses 구현; 전체 실패·늦은 완료 timeout·안전한 오류 응답 검증, lint·build·413개 단위/컴포넌트·22개 개발 DB 통합 테스트·배포·운영 HTTP 200 및 비인증 API 401 확인"
+      "summary": "소유권 기반 중복·업로드·완료 이력 래퍼, 원본 기록 후 Storage 저장, 다중 파일 동기 분석 파이프라인과 POST /api/analyses 구현; 전체 실패·늦은 완료 timeout·안전한 오류 응답 검증, lint·build·413개 단위/컴포넌트·22개 개발 DB 통합 테스트·배포·운영 HTTP 200 및 비인증 API 401 확인",
+      "completed_at": "2026-10-02T18:05:26+0900"
     },
     {
       "step": 9,
