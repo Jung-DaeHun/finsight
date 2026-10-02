@@ -55,7 +55,8 @@
       "name": "db-schema",
       "status": "completed",
       "summary": "개발 Supabase 5개 테이블·RLS·권한 회수·완료 RPC·private Storage, getClaims 인증·소유권 데이터 래퍼·운영 DB 차단 가드 구현; Vercel 키 3개 등록, lint·build·267개 단위/컴포넌트·22개 통합 테스트·배포·HTTP 200 확인",
-      "started_at": "2026-10-02T17:00:04+0900"
+      "started_at": "2026-10-02T17:00:04+0900",
+      "completed_at": "2026-10-02T17:19:48+0900"
     },
     {
       "step": 7,
