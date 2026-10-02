@@ -87,7 +87,7 @@
       "name": "dashboard-upload",
       "status": "completed",
       "started_at": "2026-10-02T18:23:49+0900",
-      "completed_at": "2026-10-02T18:44:53+0900",
+      "completed_at": "2026-10-02T18:45:47+0900",
       "summary": "소유권 DTO 기반 대시보드·사용량 미터·빈 상태·분석 목록·Free 잠금 카드, 다중 파일 검증·동기 업로드·파일별 오류·분석 중 5단계 안내 구현; lint·build·519개 단위/컴포넌트·22개 개발 DB 통합 테스트·배포·운영 HTTP 200 확인"
     },
     {
