@@ -63,7 +63,7 @@
       "name": "auth-flow",
       "status": "completed",
       "started_at": "2026-10-02T17:19:49+0900",
-      "completed_at": "2026-10-02T17:48:17+0900",
+      "completed_at": "2026-10-02T17:49:18+0900",
       "summary": "getClaims 기반 proxy·보호 경로, 디자인 인증 화면·필수 동의·메일 재발송·비밀번호 재설정, OAuth/token_hash 확인·로그아웃 Server Action·임시 대시보드 구현; lint·build·359개 단위/컴포넌트·22개 개발 DB 통합 테스트·배포·운영 HTTP 200 및 보호 경로 리다이렉트 확인; 수동 설정 필요: 이메일 템플릿 token_hash, Site URL https://finsight-orcin-two.vercel.app, Redirect URL https://finsight-orcin-two.vercel.app/auth/callback·https://finsight-orcin-two.vercel.app/auth/confirm(복구 링크 next=/reset-password 포함), Google 공급자"
     },
     {
