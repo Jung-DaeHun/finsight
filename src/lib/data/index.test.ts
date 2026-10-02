@@ -1,16 +1,17 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { completeAnalysis, countMonthlyUsage, failAnalysis, getUserPlan, recoverStaleAnalyses, startAnalysis } from "./index";
+import { completeAnalysis, countMonthlyUsage, createUpload, failAnalysis, findCompletedDuplicate, getCompletedHistory, getUserPlan, recoverStaleAnalyses, setUploadMapping, startAnalysis, uploadOriginal } from "./index";
 import { DataError } from "@/types/errors";
-import type { AnalysisSummary, Transaction } from "@/types";
+import type { AnalysisSummary, ColumnMapping, Transaction } from "@/types";
 
-const mocks = vi.hoisted(() => ({ from: vi.fn(), rpc: vi.fn() }));
-vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: () => mocks }));
+const mocks = vi.hoisted(() => ({ from: vi.fn(), rpc: vi.fn(), storageFrom: vi.fn(), upload: vi.fn() }));
+vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: () => ({ ...mocks, storage: { from: mocks.storageFrom } }) }));
 
 function query(result: { data?: unknown; error?: unknown; count?: number | null } = {}) {
   const builder = {
     select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), lt: vi.fn().mockReturnThis(),
-    in: vi.fn().mockReturnThis(), order: vi.fn().mockReturnThis(), limit: vi.fn().mockReturnThis(),
+    in: vi.fn().mockReturnThis(), neq: vi.fn().mockReturnThis(), range: vi.fn().mockReturnThis(),
+    order: vi.fn().mockReturnThis(), limit: vi.fn().mockReturnThis(),
     insert: vi.fn().mockReturnThis(), update: vi.fn().mockReturnThis(),
     single: vi.fn().mockReturnThis(), maybeSingle: vi.fn().mockReturnThis(),
     then: (resolve: (value: unknown) => unknown) => Promise.resolve({ data: null, error: null, ...result }).then(resolve),
@@ -31,8 +32,108 @@ beforeEach(() => {
   vi.clearAllMocks();
   mocks.from.mockReset();
   mocks.rpc.mockReset();
+  mocks.storageFrom.mockReturnValue({ upload: mocks.upload });
+  mocks.upload.mockReset();
   vi.useFakeTimers();
   vi.setSystemTime(new Date("2026-09-30T23:59:00Z"));
+});
+
+describe("분석 생성용 소유권·원본 래퍼", () => {
+  const columnMapping: ColumnMapping = {
+    isTransactions: true, isKrw: true, headerRowIndex: 0,
+    dateColumn: "날짜", dateFormat: "YYYY-MM-DD", merchantColumn: "가맹점",
+    amount: { mode: "single", column: "금액", debitIsNegative: false },
+  };
+  const upload = { uploadId: "upload", filename: "../원본.csv", storagePath: "owner/analysis/upload", fileHash: "hash" };
+
+  it.each([{ data: [] }, { data: [{ id: "upload" }] }])("중복은 본인 uploads와 본인의 completed 분석에만 검사한다 (%j)", async ({ data }) => {
+    const q = query({ data });
+    expect(await findCompletedDuplicate("owner", ["hash"])).toBe(data.length > 0);
+    expect(mocks.from).toHaveBeenCalledWith("uploads");
+    expect(q.select.mock.calls[0][0]).toContain("analyses!inner");
+    expect(q.eq.mock.calls).toEqual([["user_id", "owner"], ["analyses.user_id", "owner"], ["analyses.status", "completed"]]);
+    expect(q.in).toHaveBeenCalledWith("file_hash", ["hash"]);
+    expect(q.limit).toHaveBeenCalledWith(1);
+  });
+  it("빈 해시 목록은 DB에 전달하지 않는다", async () => {
+    expect(await findCompletedDuplicate("owner", [])).toBe(false);
+    expect(mocks.from).not.toHaveBeenCalled();
+  });
+  it("uploads insert 전에 분석 소유권을 확인하고 인증 사용자와 서버 경로를 기록한다", async () => {
+    const owned = query({ data: { id: "analysis" } });
+    const q = query();
+    await createUpload("owner", "analysis", upload);
+    expect(owned.eq.mock.calls).toEqual([["user_id", "owner"], ["id", "analysis"]]);
+    expect(q.insert).toHaveBeenCalledWith({
+      id: "upload", analysis_id: "analysis", user_id: "owner", original_filename: "../원본.csv",
+      storage_path: "owner/analysis/upload", file_hash: "hash",
+    });
+  });
+  it("타인·없는 분석에는 uploads를 기록하지 않는다", async () => {
+    query();
+    await expect(createUpload("owner", "foreign", upload)).rejects.toMatchObject({ code: "not_found" });
+    expect(mocks.from).toHaveBeenCalledTimes(1);
+  });
+  it("매핑은 본인 upload ID 조건으로만 갱신한다", async () => {
+    const q = query({ data: { id: "upload" } });
+    await setUploadMapping("owner", "upload", { rowCount: 8, columnMapping });
+    expect(q.update).toHaveBeenCalledWith({ row_count: 8, column_mapping: columnMapping });
+    expect(q.eq.mock.calls).toEqual([["user_id", "owner"], ["id", "upload"]]);
+  });
+  it("타인·없는 upload의 매핑 갱신은 not_found이다", async () => {
+    query();
+    await expect(setUploadMapping("owner", "foreign", { rowCount: 8, columnMapping })).rejects.toMatchObject({ code: "not_found" });
+  });
+  const dbTx = {
+    occurred_on: "2026-09-30", amount: "12000", direction: "debit", merchant: "상점",
+    description: "설명", category: "food", is_recurring: true, anomaly_type: "duplicate",
+    analyses: { user_id: "owner", status: "completed" },
+  };
+  it("이력은 본인·completed 거래만 조회하고 현재 분석을 제외한다", async () => {
+    const q = query({ data: [dbTx] });
+    expect(await getCompletedHistory("owner", "current")).toEqual([{ ...transaction, description: "설명" }]);
+    expect(mocks.from).toHaveBeenCalledWith("transactions");
+    expect(q.select.mock.calls[0][0]).toContain("analyses!inner");
+    expect(q.eq.mock.calls).toEqual([["user_id", "owner"], ["analyses.user_id", "owner"], ["analyses.status", "completed"]]);
+    expect(q.neq).toHaveBeenCalledWith("analysis_id", "current");
+    expect(q.order).toHaveBeenCalledWith("id", { ascending: true });
+    expect(q.range).toHaveBeenCalledWith(0, 999);
+  });
+  it("이력 1,000건 이후도 읽어 탐지 입력이 잘리지 않는다", async () => {
+    query({ data: Array.from({ length: 1000 }, () => ({ ...dbTx, description: null })) });
+    const second = query({ data: [dbTx] });
+    const history = await getCompletedHistory("owner", "current");
+    expect(history).toHaveLength(1001);
+    expect(history[0]).not.toHaveProperty("description");
+    expect(second.range).toHaveBeenCalledWith(1000, 1999);
+    expect(second.eq).toHaveBeenCalledWith("user_id", "owner");
+  });
+  it("안전한 정수 범위를 넘는 DB 금액은 반올림해 분석하지 않는다", async () => {
+    query({ data: [{ ...dbTx, amount: "9007199254740993" }] });
+    await expect(getCompletedHistory("owner", "current")).rejects.toMatchObject({ code: "internal_error" });
+  });
+  it("원본은 private 버킷에 바이너리로 저장하고 덮어쓰지 않는다", async () => {
+    mocks.upload.mockResolvedValue({ error: null });
+    const bytes = new Uint8Array([1, 2, 3]).buffer;
+    await uploadOriginal("owner/analysis/upload", bytes);
+    expect(mocks.storageFrom).toHaveBeenCalledWith("csv-uploads");
+    expect(mocks.upload).toHaveBeenCalledWith("owner/analysis/upload", Buffer.from(bytes), {
+      contentType: "application/octet-stream", upsert: false,
+    });
+  });
+  it("Storage 실패 원문은 전파하지 않는다", async () => {
+    mocks.upload.mockResolvedValue({ error: { message: "비공개 원문" } });
+    await expect(uploadOriginal("owner/analysis/upload", new ArrayBuffer(1))).rejects.toEqual(new DataError("internal_error"));
+  });
+  it.each(["duplicate", "create", "mapping", "history"])("%s DB 오류 원문 대신 internal_error만 전달한다", async (operation) => {
+    if (operation === "create") query({ data: { id: "analysis" } });
+    query({ error: { message: "비공개 원문" } });
+    const task = operation === "duplicate" ? findCompletedDuplicate("owner", ["hash"])
+      : operation === "create" ? createUpload("owner", "analysis", upload)
+      : operation === "mapping" ? setUploadMapping("owner", "upload", { rowCount: 1, columnMapping })
+      : getCompletedHistory("owner", "current");
+    await expect(task).rejects.toEqual(new DataError("internal_error"));
+  });
 });
 afterEach(() => vi.useRealTimers());
 

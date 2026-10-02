@@ -1,7 +1,7 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { limits, resolvePlan } from "@/lib/plan";
-import type { AnalysisSummary, Plan, SubscriptionRow, Transaction } from "@/types";
+import type { AnalysisSummary, ColumnMapping, Plan, SubscriptionRow, Transaction } from "@/types";
 import { DataError, type AnalysisErrorCode } from "@/types/errors";
 
 // 이 모듈의 userId 인자는 getClaims()로 검증한 claims.sub만 전달한다.
@@ -113,5 +113,94 @@ export async function failAnalysis(
     .eq("user_id", userId)
     .eq("id", analysisId)
     .eq("status", "processing");
+  if (error) throw new DataError("internal_error");
+}
+
+export async function findCompletedDuplicate(userId: string, hashes: string[]): Promise<boolean> {
+  if (hashes.length === 0) return false;
+  const { data, error } = await createAdminClient().from("uploads")
+    .select("id,analyses!inner(user_id,status)")
+    .eq("user_id", userId)
+    .eq("analyses.user_id", userId)
+    .eq("analyses.status", "completed")
+    .in("file_hash", hashes)
+    .limit(1);
+  if (error || !data) throw new DataError("internal_error");
+  return data.length > 0;
+}
+
+export async function createUpload(
+  userId: string,
+  analysisId: string,
+  upload: { uploadId: string; filename: string; storagePath: string; fileHash: string },
+): Promise<void> {
+  const admin = createAdminClient();
+  const owned = await admin.from("analyses").select("id")
+    .eq("user_id", userId)
+    .eq("id", analysisId)
+    .maybeSingle();
+  if (owned.error) throw new DataError("internal_error");
+  if (!owned.data) throw new DataError("not_found");
+  const { error } = await admin.from("uploads").insert({
+    id: upload.uploadId,
+    analysis_id: analysisId,
+    user_id: userId,
+    original_filename: upload.filename,
+    storage_path: upload.storagePath,
+    file_hash: upload.fileHash,
+  });
+  if (error) throw new DataError("internal_error");
+}
+
+export async function setUploadMapping(
+  userId: string,
+  uploadId: string,
+  mapping: { rowCount: number; columnMapping: ColumnMapping },
+): Promise<void> {
+  const { data, error } = await createAdminClient().from("uploads")
+    .update({ row_count: mapping.rowCount, column_mapping: mapping.columnMapping })
+    .eq("user_id", userId)
+    .eq("id", uploadId)
+    .select("id")
+    .maybeSingle();
+  if (error) throw new DataError("internal_error");
+  if (!data) throw new DataError("not_found");
+}
+
+export async function getCompletedHistory(userId: string, excludeAnalysisId: string): Promise<Transaction[]> {
+  const admin = createAdminClient();
+  const history: Transaction[] = [];
+  const pageSize = 1000;
+  for (let offset = 0; ; offset += pageSize) {
+    const { data, error } = await admin.from("transactions")
+      .select("occurred_on,amount,direction,merchant,description,category,is_recurring,anomaly_type,analyses!inner(user_id,status)")
+      .eq("user_id", userId)
+      .eq("analyses.user_id", userId)
+      .eq("analyses.status", "completed")
+      .neq("analysis_id", excludeAnalysisId)
+      .order("id", { ascending: true })
+      .range(offset, offset + pageSize - 1);
+    if (error || !data) throw new DataError("internal_error");
+    for (const row of data) {
+      const amount = Number(row.amount);
+      if (!Number.isSafeInteger(amount) || amount <= 0) throw new DataError("internal_error");
+      history.push({
+        occurredOn: row.occurred_on,
+        amount,
+        direction: row.direction,
+        merchant: row.merchant,
+        ...(row.description === null ? {} : { description: row.description }),
+        category: row.category,
+        isRecurring: row.is_recurring,
+        anomalyType: row.anomaly_type,
+      });
+    }
+    if (data.length < pageSize) return history;
+  }
+}
+
+export async function uploadOriginal(storagePath: string, bytes: ArrayBuffer): Promise<void> {
+  const { error } = await createAdminClient().storage.from("csv-uploads")
+    .upload(storagePath, Buffer.from(bytes), { contentType: "application/octet-stream", upsert: false });
   if (error) throw new DataError("internal_error");
 }

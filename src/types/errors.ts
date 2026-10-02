@@ -45,3 +45,11 @@ export class DataError extends Error {
     this.name = "DataError";
   }
 }
+
+/** 분석 실패 원문 대신 코드와 본인 업로드 ID만 전달한다. */
+export class PipelineError extends Error {
+  constructor(public readonly code: AnalysisErrorCode, public readonly uploadId?: string) {
+    super(code);
+    this.name = "PipelineError";
+  }
+}
