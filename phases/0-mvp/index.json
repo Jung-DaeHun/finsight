@@ -109,7 +109,10 @@
     {
       "step": 13,
       "name": "settings",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-10-02T22:26:06+0900",
+      "completed_at": "2026-10-02T22:46:32+0900",
+      "summary": "구독·분석 기록·계정 설정 화면, 인라인 분석 삭제·재시도와 확인 입력 탈퇴 모달, Polar → Storage 전체 삭제 확인 → auth 삭제 및 세션 쿠키 정리 구현; lint·build·669개 단위/컴포넌트·22개 개발 DB 통합 테스트·배포·운영 HTTP 200·설정 로그인 리다이렉트·비인증 탈퇴 API 401 확인"
     },
     {
       "step": 14,

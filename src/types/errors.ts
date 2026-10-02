@@ -64,6 +64,16 @@ export class StorageDeleteError extends Error {
   }
 }
 
+export type AccountDeletionErrorCode = "subscription_cancel_failed" | "storage_delete_failed" | "account_delete_failed";
+
+/** 탈퇴의 실패 단계만 전달하고 외부 서비스 오류 원문은 버린다. */
+export class AccountDeletionError extends Error {
+  constructor(public readonly code: AccountDeletionErrorCode) {
+    super(code);
+    this.name = "AccountDeletionError";
+  }
+}
+
 /** Polar 응답·시크릿 대신 안전한 서비스 오류 코드만 전달한다. */
 export class PolarServiceError extends Error {
   constructor(public readonly code: "internal_error" | "subscription_cancel_failed" = "internal_error") {
