@@ -1,8 +1,24 @@
-export default function Home() {
-  return (
-    <main className="mx-auto max-w-360 px-5 pt-8 pb-20 sm:px-9 lg:px-12">
-      <h1 className="text-3xl font-bold tracking-[-0.03em]">finsight</h1>
-      <p className="mt-4">명세서를 올리면 지출이 정리됩니다.</p>
+import { CtaBand } from "@/components/landing/CtaBand";
+import { Features } from "@/components/landing/Features";
+import { Footer } from "@/components/landing/Footer";
+import { Hero } from "@/components/landing/Hero";
+import { HowItWorks } from "@/components/landing/HowItWorks";
+import { Pricing } from "@/components/landing/Pricing";
+import { PublicHeader } from "@/components/ui/Headers";
+import { getUserId } from "@/lib/auth";
+
+export default async function Home() {
+  const signedIn = await getUserId() !== null;
+  const startHref = signedIn ? "/dashboard" : "/signup";
+  return <>
+    <PublicHeader signedIn={signedIn} />
+    <main>
+      <Hero startHref={startHref} />
+      <Features />
+      <HowItWorks />
+      <Pricing startHref={startHref} />
+      <CtaBand startHref={startHref} />
     </main>
-  );
+    <Footer />
+  </>;
 }
