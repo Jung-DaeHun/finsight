@@ -107,6 +107,16 @@ export interface AnalysisRow {
   completedAt: string | null;
 }
 
+export interface AnalysisListItem {
+  id: string;
+  status: AnalysisStatus;
+  createdAt: string;
+  errorCode?: AnalysisErrorCode;
+  filenames: string[];
+  totalSpend?: number;
+  periodTo?: string;
+}
+
 /** 클라이언트에 전달할 때는 반드시 toAnalysisView로 생성한다. */
 export interface AnalysisView {
   id: string;

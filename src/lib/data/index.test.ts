@@ -99,6 +99,12 @@ describe("분석 생성용 소유권·원본 래퍼", () => {
     expect(q.order).toHaveBeenCalledWith("id", { ascending: true });
     expect(q.range).toHaveBeenCalledWith(0, 999);
   });
+  it("제외 ID가 없으면 본인의 모든 완료 이력을 읽는다", async () => {
+    const q = query({ data: [dbTx] });
+    expect(await getCompletedHistory("owner")).toEqual([{ ...transaction, description: "설명" }]);
+    expect(q.neq).not.toHaveBeenCalled();
+    expect(q.eq.mock.calls).toEqual([["user_id", "owner"], ["analyses.user_id", "owner"], ["analyses.status", "completed"]]);
+  });
   it("이력 1,000건 이후도 읽어 탐지 입력이 잘리지 않는다", async () => {
     query({ data: Array.from({ length: 1000 }, () => ({ ...dbTx, description: null })) });
     const second = query({ data: [dbTx] });

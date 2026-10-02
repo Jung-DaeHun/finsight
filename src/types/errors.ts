@@ -53,3 +53,13 @@ export class PipelineError extends Error {
     this.name = "PipelineError";
   }
 }
+
+/** 삭제 실패 시 원본 경로·DB를 보존하고 재시도할 수 있다. */
+export class StorageDeleteError extends Error {
+  readonly code = "storage_delete_failed";
+
+  constructor() {
+    super("storage_delete_failed");
+    this.name = "StorageDeleteError";
+  }
+}

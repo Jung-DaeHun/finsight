@@ -1,7 +1,8 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { limits, resolvePlan } from "@/lib/plan";
-import type { AnalysisSummary, ColumnMapping, Plan, SubscriptionRow, Transaction } from "@/types";
+import { limits, resolvePlan, toAnalysisView } from "@/lib/plan";
+import { monthlyTrend } from "@/lib/analysis";
+import type { AnalysisListItem, AnalysisRow, AnalysisStatus, AnalysisSummary, AnalysisView, ColumnMapping, Insight, Plan, SubscriptionRow, Transaction } from "@/types";
 import { DataError, type AnalysisErrorCode } from "@/types/errors";
 
 // 이 모듈의 userId 인자는 getClaims()로 검증한 claims.sub만 전달한다.
@@ -167,33 +168,23 @@ export async function setUploadMapping(
   if (!data) throw new DataError("not_found");
 }
 
-export async function getCompletedHistory(userId: string, excludeAnalysisId: string): Promise<Transaction[]> {
+export async function getCompletedHistory(userId: string, excludeAnalysisId?: string): Promise<Transaction[]> {
   const admin = createAdminClient();
   const history: Transaction[] = [];
   const pageSize = 1000;
   for (let offset = 0; ; offset += pageSize) {
-    const { data, error } = await admin.from("transactions")
+    let query = admin.from("transactions")
       .select("occurred_on,amount,direction,merchant,description,category,is_recurring,anomaly_type,analyses!inner(user_id,status)")
       .eq("user_id", userId)
       .eq("analyses.user_id", userId)
-      .eq("analyses.status", "completed")
-      .neq("analysis_id", excludeAnalysisId)
+      .eq("analyses.status", "completed");
+    if (excludeAnalysisId !== undefined) query = query.neq("analysis_id", excludeAnalysisId);
+    const { data, error } = await query
       .order("id", { ascending: true })
       .range(offset, offset + pageSize - 1);
     if (error || !data) throw new DataError("internal_error");
     for (const row of data) {
-      const amount = Number(row.amount);
-      if (!Number.isSafeInteger(amount) || amount <= 0) throw new DataError("internal_error");
-      history.push({
-        occurredOn: row.occurred_on,
-        amount,
-        direction: row.direction,
-        merchant: row.merchant,
-        ...(row.description === null ? {} : { description: row.description }),
-        category: row.category,
-        isRecurring: row.is_recurring,
-        anomalyType: row.anomaly_type,
-      });
+      history.push(toTransaction(row));
     }
     if (data.length < pageSize) return history;
   }
@@ -203,4 +194,174 @@ export async function uploadOriginal(storagePath: string, bytes: ArrayBuffer): P
   const { error } = await createAdminClient().storage.from("csv-uploads")
     .upload(storagePath, Buffer.from(bytes), { contentType: "application/octet-stream", upsert: false });
   if (error) throw new DataError("internal_error");
+}
+
+interface AnalysisRecord {
+  id: string;
+  user_id: string;
+  status: AnalysisStatus;
+  error_code: AnalysisErrorCode | null;
+  failed_upload_id: string | null;
+  summary: AnalysisSummary | null;
+  detections: AnalysisRow["detections"];
+  insights: Insight[] | null;
+  created_at: string;
+  completed_at: string | null;
+}
+
+type TransactionRecord = {
+  occurred_on: string;
+  amount: number | string;
+  direction: Transaction["direction"];
+  merchant: string;
+  description: string | null;
+  category: Transaction["category"];
+  is_recurring: boolean;
+  anomaly_type: Transaction["anomalyType"];
+};
+
+function toTransaction(row: TransactionRecord): Transaction {
+  const amount = Number(row.amount);
+  if (!Number.isSafeInteger(amount) || amount <= 0) throw new DataError("internal_error");
+  return {
+    occurredOn: row.occurred_on, amount, direction: row.direction, merchant: row.merchant,
+    ...(row.description === null ? {} : { description: row.description }),
+    category: row.category, isRecurring: row.is_recurring, anomalyType: row.anomaly_type,
+  };
+}
+
+async function ownedAnalysis<T>(userId: string, analysisId: string, columns: string, completedOnly = false): Promise<T | null> {
+  let query = createAdminClient().from("analyses").select(columns)
+    .eq("user_id", userId).eq("id", analysisId);
+  if (completedOnly) query = query.eq("status", "completed");
+  const { data, error } = await query.maybeSingle<T>();
+  // UUID 형식이 아닌 요청 ID도 알 수 없는 ID와 같은 결과로 처리한다.
+  if (error?.code === "22P02") return null;
+  if (error) throw new DataError("internal_error");
+  return data;
+}
+
+async function analysisTransactions(userId: string, analysisId: string): Promise<Transaction[]> {
+  const transactions: Transaction[] = [];
+  for (let offset = 0; ; offset += 1000) {
+    const { data, error } = await createAdminClient().from("transactions")
+      .select("occurred_on,amount,direction,merchant,description,category,is_recurring,anomaly_type")
+      .eq("user_id", userId).eq("analysis_id", analysisId)
+      .order("id", { ascending: true }).range(offset, offset + 999);
+    if (error || !data) throw new DataError("internal_error");
+    transactions.push(...data.map(toTransaction));
+    if (data.length < 1000) return transactions;
+  }
+}
+
+export async function getAnalysisView(userId: string, analysisId: string): Promise<AnalysisView | null> {
+  await recoverStaleAnalyses(userId);
+  const record = await ownedAnalysis<AnalysisRecord>(userId, analysisId,
+    "id,user_id,status,error_code,failed_upload_id,summary,detections,insights,created_at,completed_at");
+  if (!record) return null;
+  const plan = await getUserPlan(userId);
+  let failedUpload: AnalysisRow["failedUpload"] = null;
+  if (record.status === "failed" && record.failed_upload_id !== null) {
+    const { data, error } = await createAdminClient().from("uploads").select("id,original_filename")
+      .eq("user_id", userId).eq("analysis_id", analysisId).eq("id", record.failed_upload_id)
+      .maybeSingle();
+    if (error) throw new DataError("internal_error");
+    if (data) failedUpload = { id: data.id, filename: data.original_filename };
+  }
+  const row: AnalysisRow = {
+    id: record.id, userId: record.user_id, status: record.status, errorCode: record.error_code,
+    failedUpload, summary: record.summary, detections: record.detections, insights: record.insights,
+    createdAt: record.created_at, completedAt: record.completed_at,
+  };
+  const transactions = record.status === "completed" ? await analysisTransactions(userId, analysisId) : [];
+  const trend = record.status === "completed" && plan === "pro"
+    ? monthlyTrend([...await getCompletedHistory(userId, analysisId), ...transactions]) : null;
+  return toAnalysisView({ row, transactions, trend }, plan);
+}
+
+export async function listAnalyses(userId: string): Promise<AnalysisListItem[]> {
+  await recoverStaleAnalyses(userId);
+  const rows: Pick<AnalysisRecord, "id" | "status" | "created_at" | "error_code" | "summary">[] = [];
+  for (let offset = 0; ; offset += 1000) {
+    const { data, error } = await createAdminClient().from("analyses")
+      .select("id,status,created_at,error_code,summary")
+      .eq("user_id", userId).order("created_at", { ascending: false }).order("id", { ascending: true })
+      .range(offset, offset + 999);
+    if (error || !data) throw new DataError("internal_error");
+    rows.push(...data);
+    if (data.length < 1000) break;
+  }
+  const filenames = new Map<string, string[]>();
+  for (let start = 0; start < rows.length; start += 1000) {
+    const ids = rows.slice(start, start + 1000).map((row) => row.id);
+    for (let offset = 0; ; offset += 1000) {
+      const { data, error } = await createAdminClient().from("uploads")
+        .select("analysis_id,original_filename")
+        .eq("user_id", userId).in("analysis_id", ids)
+        .order("id", { ascending: true }).range(offset, offset + 999);
+      if (error || !data) throw new DataError("internal_error");
+      for (const upload of data) {
+        const names = filenames.get(upload.analysis_id) ?? [];
+        names.push(upload.original_filename);
+        filenames.set(upload.analysis_id, names);
+      }
+      if (data.length < 1000) break;
+    }
+  }
+  return rows.map((row) => ({
+    id: row.id, status: row.status, createdAt: row.created_at, filenames: filenames.get(row.id) ?? [],
+    ...(row.status === "failed" && row.error_code !== null ? { errorCode: row.error_code } : {}),
+    ...(row.status === "completed" && row.summary !== null ? {
+      totalSpend: row.summary.totalSpend, periodTo: row.summary.period.to,
+    } : {}),
+  }));
+}
+
+function insightFields(insights: Insight[]): Insight[] {
+  return insights.map((insight) => ({ title: insight.title, body: insight.body, monthlySaving: insight.monthlySaving }));
+}
+
+export async function getAnalysisForInsights(userId: string, analysisId: string): Promise<{
+  summary: AnalysisSummary;
+  detections: NonNullable<AnalysisRow["detections"]>;
+  insights: Insight[] | null;
+} | null> {
+  const row = await ownedAnalysis<Pick<AnalysisRecord, "summary" | "detections" | "insights">>(
+    userId, analysisId, "summary,detections,insights", true,
+  );
+  if (!row) return null;
+  if (!row.summary || !row.detections) throw new DataError("internal_error");
+  return {
+    summary: row.summary,
+    detections: { recurringCount: row.detections.recurringCount, anomalyCount: row.detections.anomalyCount },
+    insights: row.insights === null ? null : insightFields(row.insights),
+  };
+}
+
+export async function saveInsights(userId: string, analysisId: string, insights: Insight[]): Promise<Insight[]> {
+  const { data, error } = await createAdminClient().from("analyses")
+    .update({ insights: insightFields(insights) }).eq("user_id", userId).eq("id", analysisId)
+    .eq("status", "completed").is("insights", null).select("insights")
+    .maybeSingle<{ insights: Insight[] }>();
+  if (error) throw new DataError("internal_error");
+  if (data) return insightFields(data.insights);
+  // 동시 생성에서는 먼저 저장한 값을 재사용하고 삭제된 분석은 404로 처리한다.
+  const existing = await getAnalysisForInsights(userId, analysisId);
+  if (!existing) throw new DataError("not_found");
+  if (existing.insights === null) throw new DataError("internal_error");
+  return existing.insights;
+}
+
+export async function getAnalysisStatus(userId: string, analysisId: string): Promise<AnalysisStatus | null> {
+  const row = await ownedAnalysis<Pick<AnalysisRecord, "status">>(userId, analysisId, "status");
+  return row?.status ?? null;
+}
+
+/** Storage 삭제 완료를 확인한 deletion 서비스에서만 호출한다. */
+export async function deleteAnalysisRecord(userId: string, analysisId: string): Promise<boolean> {
+  const { data, error } = await createAdminClient().from("analyses").delete()
+    .eq("user_id", userId).eq("id", analysisId).neq("status", "processing")
+    .select("id").maybeSingle();
+  if (error) throw new DataError("internal_error");
+  return data !== null;
 }
