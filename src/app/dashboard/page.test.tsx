@@ -1,26 +1,66 @@
 import { render, screen } from "@testing-library/react";
 import { beforeEach, expect, it, vi } from "vitest";
 import DashboardPage from "./page";
-const mocks = vi.hoisted(() => ({ getClaims: vi.fn(), getUserPlan: vi.fn(), recoverStaleAnalyses: vi.fn(), redirect: vi.fn() }));
+
+const mocks = vi.hoisted(() => ({
+  getUserId: vi.fn(), getClaims: vi.fn(), getUserPlan: vi.fn(), recoverStaleAnalyses: vi.fn(),
+  countMonthlyUsage: vi.fn(), listAnalyses: vi.fn(), redirect: vi.fn(), push: vi.fn(), refresh: vi.fn(),
+}));
+vi.mock("@/lib/auth", () => ({ getUserId: mocks.getUserId }));
 vi.mock("@/lib/supabase/server", () => ({ createClient: async () => ({ auth: { getClaims: mocks.getClaims } }) }));
-vi.mock("@/lib/data", () => ({ getUserPlan: mocks.getUserPlan, recoverStaleAnalyses: mocks.recoverStaleAnalyses }));
-vi.mock("next/navigation", () => ({ redirect: mocks.redirect }));
+vi.mock("@/lib/data", () => mocks);
+vi.mock("next/navigation", () => ({ redirect: mocks.redirect, useRouter: () => mocks }));
+vi.mock("./actions", () => ({ getFailedUploadFilename: vi.fn() }));
 vi.mock("@/components/ui/Headers", () => ({ AppHeader: ({ email }: { email: string }) => <div>{email}</div> }));
 beforeEach(() => {
   vi.resetAllMocks();
-  mocks.getClaims.mockResolvedValue({ data: null, error: null });
+  mocks.getUserId.mockResolvedValue("owner");
+  mocks.getClaims.mockResolvedValue({ data: { claims: { sub: "owner", email: "member@example.com" } }, error: null });
   mocks.getUserPlan.mockResolvedValue("free");
+  mocks.countMonthlyUsage.mockResolvedValue(2);
+  mocks.listAnalyses.mockResolvedValue([]);
   mocks.redirect.mockImplementation((path) => { throw new Error(`redirect:${path}`); });
 });
-
-it("임시 대시보드도 claims 인증과 사용자 소유권으로 조회한다", async () => {
-  mocks.getClaims.mockResolvedValue({ data: { claims: { sub: "owner", email: "member@example.com" } }, error: null });
+it("J2: 인증·정체 복구 후 본인 원장과 목록으로 빈 화면을 표시한다", async () => {
   render(await DashboardPage());
   expect(screen.getByRole("heading", { name: "대시보드" })).toBeVisible();
-  expect(mocks.getUserPlan).toHaveBeenCalledWith("owner");
-  expect(mocks.recoverStaleAnalyses).toHaveBeenCalledWith("owner");
+  expect(screen.getByRole("heading", { name: "첫 명세서를 올려 보세요" })).toBeVisible();
+  expect(screen.queryByRole("heading", { name: /내 분석/ })).not.toBeInTheDocument();
+  expect(screen.getByText("이번 달 분석")).toBeVisible();
+  expect(screen.getByText("2 / 5회")).toBeVisible();
+  for (const [name, href] of [["새 분석", "#upload"], ["파일 올리기", "#upload"], ["샘플 결과 체험", "/sample"]]) {
+    expect(screen.getByRole("link", { name })).toHaveAttribute("href", href);
+  }
+  for (const read of [mocks.getUserPlan, mocks.countMonthlyUsage, mocks.listAnalyses]) {
+    expect(read).toHaveBeenCalledWith("owner");
+    expect(mocks.recoverStaleAnalyses.mock.invocationCallOrder[0]).toBeLessThan(read.mock.invocationCallOrder[0]);
+  }
 });
-it("대시보드는 인증 실패 시 DB 조회 전 로그인으로 이동한다", async () => {
+it("기록이 있으면 빈 상태 대신 완료 목록과 Free 잠금 카드를 표시한다", async () => {
+  mocks.listAnalyses.mockResolvedValue([{ id: "analysis", status: "completed", createdAt: "2026-10-01T00:00:00Z", filenames: ["명세서.csv"], totalSpend: 12000, periodTo: "2026-09-30" }]);
+  render(await DashboardPage());
+  expect(screen.queryByText("첫 명세서를 올려 보세요")).not.toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: /내 분석\s*\(1\)/ })).toBeVisible();
+  expect(screen.getByRole("link", { name: /2026년 9월/ })).toHaveAttribute("href", "/dashboard/analyses/analysis");
+  expect(screen.getByText("카드·계좌 여러 개를 한 번에")).toBeVisible();
+  expect(screen.getByRole("link", { name: "Pro로 업그레이드" })).toHaveAttribute("href", "/api/checkout");
+});
+it("Pro는 50회 미터·3개 파일 안내를 표시하고 Free 잠금 카드를 숨긴다", async () => {
+  mocks.getUserPlan.mockResolvedValue("pro");
+  render(await DashboardPage());
+  expect(screen.getByText("2 / 50회")).toBeVisible();
+  expect(screen.getByText("파일 최대 3개 · 여러 카드·계좌를 합쳐 분석")).toBeVisible();
+  expect(screen.queryByText("카드·계좌 여러 개를 한 번에")).not.toBeInTheDocument();
+});
+it("2.5·5.2: 기록이 없어도 성공 원장이 한도에 도달하면 업로드를 비활성화한다", async () => {
+  mocks.countMonthlyUsage.mockResolvedValue(5);
+  render(await DashboardPage());
+  expect(screen.getByText("5 / 5회")).toBeVisible();
+  expect(screen.getByRole("button", { name: "이번 달 분석 횟수를 모두 사용했습니다" })).toBeDisabled();
+  expect(screen.getByText(/다음 달 1일\(UTC\)/)).toBeVisible();
+});
+it("인증 실패는 복구·목록 조회 전에 로그인으로 이동한다", async () => {
+  mocks.getUserId.mockResolvedValue(null);
   await expect(DashboardPage()).rejects.toThrow("redirect:/login");
-  expect(mocks.getUserPlan).not.toHaveBeenCalled();
+  for (const read of [mocks.recoverStaleAnalyses, mocks.getUserPlan, mocks.countMonthlyUsage, mocks.listAnalyses]) expect(read).not.toHaveBeenCalled();
 });

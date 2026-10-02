@@ -38,3 +38,8 @@ export const AUTH_ERROR_MESSAGES: Record<AuthErrorCode, string> = {
   oauth_failed: "Google 로그인을 완료하지 못했습니다. 다시 시도해 주세요.",
   auth_rate_limited: "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.",
 };
+
+export const UPLOAD_ERROR_MESSAGES = {
+  unsupported_file_type: "CSV, xlsx, xls 파일만 올릴 수 있습니다.",
+  response_unavailable: "분석 결과를 확인하지 못했습니다. 잠시 후 다시 시도해 주세요. 대시보드를 새로고침해 분석 상태를 확인해 주세요.",
+};
