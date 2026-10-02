@@ -1,4 +1,4 @@
-import type { AnalysisErrorCode, ApiErrorCode } from "@/types/errors";
+import type { AnalysisErrorCode, ApiErrorCode, AuthErrorCode } from "@/types/errors";
 
 export const ERROR_MESSAGES: Record<AnalysisErrorCode | ApiErrorCode, string> = {
   not_transactions: "거래내역을 찾을 수 없습니다. 카드 명세서나 은행 거래내역 파일을 올려 주세요.",
@@ -25,4 +25,16 @@ export const ERROR_MESSAGES: Record<AnalysisErrorCode | ApiErrorCode, string> = 
   subscription_cancel_failed: "구독 취소를 완료하지 못해 회원 탈퇴를 중단했습니다. 잠시 후 다시 시도해 주세요.",
   account_delete_failed: "계정을 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.",
   internal_error: "요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.",
+};
+
+export const AUTH_ERROR_MESSAGES: Record<AuthErrorCode, string> = {
+  invalid_email: "이메일 형식을 확인해 주세요.",
+  password_too_short: "비밀번호는 8자 이상입니다.",
+  consent_required: "필수 항목에 동의해 주세요.",
+  invalid_credentials: "이메일 또는 비밀번호를 확인해 주세요.",
+  email_not_confirmed: "이메일 인증이 필요합니다.",
+  auth_failed: "인증 요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.",
+  auth_link_expired: "인증 링크가 만료되었거나 유효하지 않습니다. 인증 메일을 다시 받아 주세요.",
+  oauth_failed: "Google 로그인을 완료하지 못했습니다. 다시 시도해 주세요.",
+  auth_rate_limited: "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.",
 };

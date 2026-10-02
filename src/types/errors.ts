@@ -31,6 +31,13 @@ export const API_ERROR_CODES = [
 export type AnalysisErrorCode = (typeof ANALYSIS_ERROR_CODES)[number];
 export type ApiErrorCode = (typeof API_ERROR_CODES)[number];
 
+export const AUTH_ERROR_CODES = [
+  "invalid_email", "password_too_short", "consent_required", "invalid_credentials",
+  "email_not_confirmed", "auth_failed", "auth_link_expired", "oauth_failed", "auth_rate_limited",
+] as const;
+
+export type AuthErrorCode = (typeof AUTH_ERROR_CODES)[number];
+
 /** DB 오류 원문 대신 API가 처리할 수 있는 코드만 전달한다. */
 export class DataError extends Error {
   constructor(public readonly code: ApiErrorCode) {

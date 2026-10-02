@@ -1,4 +1,5 @@
 import type { Plan } from "@/types";
+import { signOut } from "@/app/auth/actions";
 import Link from "next/link";
 import { Badge } from "./Badge";
 import { Button } from "./Button";
@@ -31,6 +32,6 @@ export function AppHeader({ plan, email, active, onSignOut }: { plan: Plan; emai
     <nav aria-label="앱 메뉴" className="flex h-full items-center justify-center gap-1 max-[600px]:col-span-2 max-[600px]:row-start-2 max-[600px]:h-11">
       {tabs.map((tab) => <Link key={tab.href} href={tab.href} aria-current={tab.selected ? "page" : undefined} className={`flex h-full items-center border-b-2 px-3 font-medium no-underline ${tab.selected ? "border-ink text-ink" : "border-transparent text-mute"}`}>{tab.label}</Link>)}
     </nav>
-    <div className="flex items-center justify-end gap-3"><Badge inverse={plan === "pro"}>{plan === "pro" ? "Pro" : "Free"}</Badge><span className="text-sm text-mute max-[860px]:hidden">{email}</span><button type="button" onClick={onSignOut} className="text-sm font-medium text-ink">로그아웃</button></div>
+    <div className="flex items-center justify-end gap-3"><Badge inverse={plan === "pro"}>{plan === "pro" ? "Pro" : "Free"}</Badge><span className="text-sm text-mute max-[860px]:hidden">{email}</span>{onSignOut ? <button type="button" onClick={onSignOut} className="text-sm font-medium text-ink">로그아웃</button> : <form action={signOut}><button type="submit" className="text-sm font-medium text-ink">로그아웃</button></form>}</div>
   </header>;
 }
