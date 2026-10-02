@@ -63,3 +63,11 @@ export class StorageDeleteError extends Error {
     this.name = "StorageDeleteError";
   }
 }
+
+/** Polar 응답·시크릿 대신 안전한 서비스 오류 코드만 전달한다. */
+export class PolarServiceError extends Error {
+  constructor(public readonly code: "internal_error" | "subscription_cancel_failed" = "internal_error") {
+    super(code);
+    this.name = "PolarServiceError";
+  }
+}

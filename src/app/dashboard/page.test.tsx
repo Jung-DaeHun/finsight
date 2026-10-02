@@ -64,3 +64,19 @@ it("인증 실패는 복구·목록 조회 전에 로그인으로 이동한다",
   await expect(DashboardPage()).rejects.toThrow("redirect:/login");
   for (const read of [mocks.recoverStaleAnalyses, mocks.getUserPlan, mocks.countMonthlyUsage, mocks.listAnalyses]) expect(read).not.toHaveBeenCalled();
 });
+it("J4: 성공 리다이렉트여도 서버 플랜이 Free이면 확인 배너를 표시한다", async () => {
+  render(await DashboardPage({ searchParams: Promise.resolve({ checkout: "success" }) }));
+  expect(screen.getByText("결제 확인 중")).toBeVisible();
+  expect(screen.getByText("2 / 5회")).toBeVisible();
+});
+it("J4: 성공 리다이렉트에서 서버 플랜이 Pro이면 Toast만 표시한다", async () => {
+  mocks.getUserPlan.mockResolvedValue("pro");
+  render(await DashboardPage({ searchParams: Promise.resolve({ checkout: "success" }) }));
+  expect(screen.queryByText("결제 확인 중")).not.toBeInTheDocument();
+  expect(screen.getByText("Pro가 활성화됐습니다")).toBeVisible();
+});
+it("결제 성공 이외의 방문은 배너·Toast를 표시하지 않는다", async () => {
+  render(await DashboardPage({ searchParams: Promise.resolve({ checkout: "canceled" }) }));
+  expect(screen.queryByText("결제 확인 중")).not.toBeInTheDocument();
+  expect(screen.queryByText("Pro가 활성화됐습니다")).not.toBeInTheDocument();
+});

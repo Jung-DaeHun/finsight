@@ -101,7 +101,10 @@
     {
       "step": 12,
       "name": "billing",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-10-02T22:08:20+0900",
+      "completed_at": "2026-10-02T22:25:07+0900",
+      "summary": "Polar 실제·명시적 mock 체크아웃/포털/구독 취소, 서명 검증 웹훅·구독 소유권 요약, 3초·최대 20회 결제 확인 배너 구현; lint·build·622개 단위/컴포넌트·22개 개발 DB 통합 테스트·배포·운영 HTTP 200 및 비인증 checkout/portal 401 확인"
     },
     {
       "step": 13,

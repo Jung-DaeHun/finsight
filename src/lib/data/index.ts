@@ -4,6 +4,7 @@ import { limits, resolvePlan, toAnalysisView } from "@/lib/plan";
 import { monthlyTrend } from "@/lib/analysis";
 import type { AnalysisListItem, AnalysisRow, AnalysisStatus, AnalysisSummary, AnalysisView, ColumnMapping, Insight, Plan, SubscriptionRow, Transaction } from "@/types";
 import { DataError, type AnalysisErrorCode } from "@/types/errors";
+export { getSubscriptionSummary, upsertSubscription, userExists } from "./subscriptions";
 
 // 이 모듈의 userId 인자는 getClaims()로 검증한 claims.sub만 전달한다.
 export async function getUserPlan(userId: string): Promise<Plan> {
