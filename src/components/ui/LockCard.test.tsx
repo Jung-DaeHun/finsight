@@ -7,3 +7,7 @@ it("제목·설명과 checkout 링크를 표시한다", () => {
   expect(screen.getByText(/Pro는 분석당 파일 3개/)).toBeVisible();
   expect(screen.getByRole("link", { name: "Pro로 업그레이드" })).toHaveAttribute("href", "/api/checkout");
 });
+it("발견 건수를 가짜 상세 없이 표시한다", () => {
+  render(<LockCard title="정기결제" teaser="3건 발견" description="상세는 Pro에서 볼 수 있습니다." />);
+  expect(screen.getByText("3건 발견")).toBeVisible();
+});
