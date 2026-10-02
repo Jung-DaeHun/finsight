@@ -297,7 +297,7 @@ toAnalysisView(input: { row: AnalysisRow; transactions: Transaction[]; trend: Mo
 - 사전 준비 (사용자):
   - 구현 시작 전: `! npx vercel login`
   - 6단계 전: Supabase 개발 프로젝트 생성 + `! npx supabase login`, 키 3개와 `SUPABASE_DB_PASSWORD`를 `.env.local`에 기록
-  - 7단계 전: Google OAuth 클라이언트, Supabase 이메일 템플릿을 `token_hash` 방식으로 수정
+  - 7단계 전: Google OAuth 클라이언트, Supabase 커스텀 SMTP 연결(템플릿 수정에 필수, 예: Gmail 앱 비밀번호), 이메일 템플릿을 `token_hash` 방식으로 수정
   - 15단계 전: Supabase 운영 프로젝트, Anthropic API 키, Polar 샌드박스 + Pro 상품, Polar 웹훅 엔드포인트(`{prodUrl}/api/webhooks/polar`) 등록. 운영 값은 `.env.go-live.local`에만 기록한다(`.env.local`은 개발 프로젝트 전용, 통합 테스트가 읽음)
 
 ---
