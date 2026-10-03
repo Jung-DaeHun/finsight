@@ -19,6 +19,13 @@ describe("Claude mock fixture", () => {
     expect(normalize(rows, result).txs.map((tx) => tx.occurredOn.slice(0, 4))).toEqual([String(result.assumedYear), String(result.assumedYear! + 1)]);
   });
 
+  it("E3: '2026년 09월 15일' 날짜를 YYYY년 M월 D일 형식으로 판별한다", async () => {
+    const rows = [["이용일", "이용가맹점", "이용금액"], ["2026년 09월 15일", "카페", "12,000"]];
+    const result = await mapColumns(rows[0], rows.slice(1), "free");
+    expect(result.dateFormat).toBe("YYYY년 M월 D일");
+    expect(normalize(rows, result).txs[0]).toMatchObject({ occurredOn: "2026-09-15", amount: 12000 });
+  });
+
   it("R7: 해외 결제가 섞이면 원화 환산 열을 고른다", async () => {
     const rows = [["거래일", "가맹점", "USD 금액", "원화 환산 금액"], ["2026-09-01", "SHOP", "10", "14000"]];
     const result = await mapColumns(rows[0], rows.slice(1), "pro");

@@ -67,7 +67,8 @@ export function readRows(bytes: ArrayBuffer): ReadRowsResult {
   let encoding: ReadRowsResult["encoding"] = null;
   if (!isZip && !isOle) {
     const decoded = decodeText(data);
-    input = decoded.text;
+    // SheetJS는 `</td >`처럼 공백 있는 닫는 태그를 인식하지 못해 옆 셀과 합친다(카드사 HTML-xls).
+    input = decoded.text.replace(/<\/(td|th)\s+>/gi, "</$1>");
     encoding = decoded.encoding;
     if (!decoded.text.trim()) throw new SheetError("file_unreadable");
     // HTML 확장자의 일반 텍스트나 표 없는 HTML을 CSV로 오인하지 않는다.
