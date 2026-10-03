@@ -29,7 +29,7 @@
 3. **Vercel production env 교체** — `.env.go-live.local` 값으로 `vercel env rm <NAME> production --yes`(있으면) → `vercel env add <NAME> production`: Supabase 3개, `ANTHROPIC_API_KEY`, `POLAR_ACCESS_TOKEN`, `POLAR_WEBHOOK_SECRET`, `POLAR_PRO_PRODUCT_ID`, `POLAR_SERVER`. `SUPABASE_PROD_DB_URL`은 올리지 마라. 마지막으로 **`MOCK_SERVICES`를 production env에서 삭제**
 4. **최종 배포** — AC의 deploy·smoke. 배포 후 `{prodUrl}`에 데모 모드 띠가 없는지 `curl -s {prodUrl} | grep -c "데모 모드"`가 0인지 확인
 5. **수동 체크리스트 작성** — `phases/0-mvp/go-live-checklist.md`에 사용자가 직접 확인할 항목을 체크박스로 작성:
-   - 운영 Supabase 대시보드: 이메일 템플릿 token_hash 방식, Site URL·Redirect URLs(`{prodUrl}/auth/callback`, `{prodUrl}/auth/confirm`), Google 공급자, 서울 리전
+   - 운영 Supabase 대시보드: 커스텀 SMTP 연결(템플릿 수정에 필수), 이메일 템플릿 token_hash 방식, Site URL·Redirect URLs(`{prodUrl}/auth/callback`, `{prodUrl}/auth/confirm`), Google 공급자, 서울 리전
    - Anthropic 콘솔 월 사용 한도, Vercel Pro 전환(Hobby는 상업적 이용 금지)
    - ARCHITECTURE 12절 수동 확인 흐름: 이메일 가입(다른 기기에서 인증 링크) → 샘플 → 국내 카드사 엑셀 3종 + 은행 1종 업로드 → 결과 → Polar 샌드박스 결제 → Pro 기능 해제 → 포털에서 해지 → 회원 탈퇴
    - 계정 2개로 A의 분석 ID를 B가 결과 페이지·DELETE·insights에 사용 → 404 (R1, R4)

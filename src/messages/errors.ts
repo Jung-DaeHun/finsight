@@ -1,0 +1,45 @@
+import type { AnalysisErrorCode, ApiErrorCode, AuthErrorCode } from "@/types/errors";
+
+export const ERROR_MESSAGES: Record<AnalysisErrorCode | ApiErrorCode, string> = {
+  not_transactions: "거래내역을 찾을 수 없습니다. 카드 명세서나 은행 거래내역 파일을 올려 주세요.",
+  mapping_failed: "날짜·금액·가맹점 열을 확인하지 못했습니다. 다른 형식으로 내려받은 파일을 올려 주세요.",
+  too_many_invalid_rows: "날짜나 금액을 읽을 수 없는 행이 20%를 넘습니다. 파일 내용을 확인하거나 다른 파일로 시도해 주세요.",
+  file_unreadable: "파일을 읽을 수 없습니다. 비어 있거나 손상되지 않았는지 확인하고 CSV, xlsx, xls 파일로 다시 올려 주세요.",
+  file_encrypted: "암호가 걸린 파일입니다. 엑셀에서 열고 [파일 → 정보 → 통합 문서 보호 → 암호 설정]에서 암호를 지운 뒤 다시 저장해 올려 주세요.",
+  llm_unavailable: "분석 서비스에 연결하지 못했습니다. 잠시 후 다시 업로드해 주세요. 분석 횟수는 차감되지 않았습니다.",
+  timeout: "분석 시간이 초과되었습니다. 다시 업로드해 주세요. 분석 횟수는 차감되지 않았습니다.",
+  too_many_rows: "시트가 1,200행을 넘습니다.",
+  unsupported_encoding: "파일의 문자 인코딩을 읽을 수 없습니다. UTF-8 또는 EUC-KR(CP949)로 저장한 뒤 다시 올려 주세요.",
+  unsupported_currency: "원화(KRW) 금액 열이 없는 외화 명세서는 분석할 수 없습니다. 원화 환산 금액이 포함된 명세서를 받아 주세요.",
+  storage_upload_failed: "원본 파일을 저장하지 못했습니다. 잠시 후 다시 업로드해 주세요. 분석 횟수는 차감되지 않았습니다.",
+  unauthorized: "로그인이 필요합니다. 다시 로그인해 주세요.",
+  not_found: "요청한 정보를 찾을 수 없습니다.",
+  file_too_large: "1MB를 넘는 파일입니다. 기간을 나눠 다시 내려받아 주세요.",
+  too_many_files: "분석당 파일 수를 초과했습니다. Free는 1개, Pro는 최대 3개까지 올릴 수 있습니다.",
+  monthly_limit: "이번 달 분석 한도에 도달했습니다. 분석 횟수는 다음 달 1일(UTC)에 초기화됩니다.",
+  duplicate_file: "같은 내용의 파일을 이미 분석했습니다. 기존 분석은 대시보드에서 볼 수 있습니다.",
+  already_pro: "이미 Pro를 이용 중입니다.",
+  pro_required: "Pro 전용 기능입니다. 업그레이드 후 이용해 주세요.",
+  analysis_in_progress: "진행 중인 분석이 있습니다. 분석이 끝난 뒤 다시 시도해 주세요.",
+  storage_delete_failed: "원본 파일을 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.",
+  subscription_cancel_failed: "구독 취소를 완료하지 못해 회원 탈퇴를 중단했습니다. 잠시 후 다시 시도해 주세요.",
+  account_delete_failed: "계정을 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.",
+  internal_error: "요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.",
+};
+
+export const AUTH_ERROR_MESSAGES: Record<AuthErrorCode, string> = {
+  invalid_email: "이메일 형식을 확인해 주세요.",
+  password_too_short: "비밀번호는 8자 이상입니다.",
+  consent_required: "필수 항목에 동의해 주세요.",
+  invalid_credentials: "이메일 또는 비밀번호를 확인해 주세요.",
+  email_not_confirmed: "이메일 인증이 필요합니다.",
+  auth_failed: "인증 요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.",
+  auth_link_expired: "인증 링크가 만료되었거나 유효하지 않습니다. 인증 메일을 다시 받아 주세요.",
+  oauth_failed: "Google 로그인을 완료하지 못했습니다. 다시 시도해 주세요.",
+  auth_rate_limited: "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.",
+};
+
+export const UPLOAD_ERROR_MESSAGES = {
+  unsupported_file_type: "CSV, xlsx, xls 파일만 올릴 수 있습니다.",
+  response_unavailable: "분석 결과를 확인하지 못했습니다. 잠시 후 다시 시도해 주세요. 대시보드를 새로고침해 분석 상태를 확인해 주세요.",
+};

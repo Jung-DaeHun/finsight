@@ -7,13 +7,18 @@ INPUT=$(cat)
 
 # Codex apply_patch: file_path 없이 패치 본문(tool_input.command)만 온다.
 # "*** Add File: 경로" / "*** Update File: 경로" 를 뽑아 파일마다 이 스크립트를 다시 실행하고,
-# 첫 deny 출력을 그대로 내보낸다. (경로는 세션 cwd 기준 상대경로)
+# 첫 deny 출력을 그대로 내보낸다. (상대경로는 세션 cwd 기준, 절대경로는 그대로)
 if [ "$(echo "$INPUT" | jq -r '.tool_name // empty' | tr -d '\r')" = "apply_patch" ]; then
   CWD=$(echo "$INPUT" | jq -r '.cwd // empty' | tr -d '\r')
   CWD="${CWD//\\//}"
   while IFS= read -r REL; do
     [ -z "$REL" ] && continue
-    OUT=$(jq -n --arg p "$CWD/$REL" '{tool_input: {file_path: $p}}' | bash "$0")
+    REL="${REL//\\//}"
+    case "$REL" in
+      /*|[A-Za-z]:/*) P="$REL" ;;
+      *) P="$CWD/$REL" ;;
+    esac
+    OUT=$(jq -n --arg p "$P" '{tool_input: {file_path: $p}}' | bash "$0")
     if [ -n "$OUT" ]; then
       echo "$OUT"
       exit 0

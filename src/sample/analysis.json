@@ -1,0 +1,610 @@
+{
+  "id": "sample",
+  "status": "completed",
+  "summary": {
+    "totalSpend": 1487900,
+    "byCategory": {
+      "food": 260000,
+      "cafe": 61500,
+      "groceries": 84000,
+      "transport": 49500,
+      "shopping": 172600,
+      "subscription": 37800,
+      "utilities": 69000,
+      "housing": 650000,
+      "health": 45000,
+      "entertainment": 58500
+    },
+    "topMerchants": [
+      {
+        "merchant": "집세",
+        "amount": 650000
+      },
+      {
+        "merchant": "마을 식당",
+        "amount": 260000
+      },
+      {
+        "merchant": "생활 상점",
+        "amount": 112000
+      },
+      {
+        "merchant": "마을 마트",
+        "amount": 84000
+      },
+      {
+        "merchant": "통신 요금",
+        "amount": 69000
+      }
+    ],
+    "period": {
+      "from": "2026-09-01",
+      "to": "2026-09-30"
+    },
+    "transactionCount": 53,
+    "skippedRows": 0
+  },
+  "transactions": [
+    {
+      "occurredOn": "2026-09-01",
+      "amount": 650000,
+      "direction": "debit",
+      "merchant": "집세",
+      "category": "housing",
+      "description": "자동이체"
+    },
+    {
+      "occurredOn": "2026-09-01",
+      "amount": 17000,
+      "direction": "debit",
+      "merchant": "영상 구독",
+      "category": "subscription",
+      "description": "월 이용료"
+    },
+    {
+      "occurredOn": "2026-09-05",
+      "amount": 10900,
+      "direction": "debit",
+      "merchant": "음악 구독",
+      "category": "subscription",
+      "description": "월 이용료"
+    },
+    {
+      "occurredOn": "2026-09-10",
+      "amount": 69000,
+      "direction": "debit",
+      "merchant": "통신 요금",
+      "category": "utilities",
+      "description": "자동이체"
+    },
+    {
+      "occurredOn": "2026-09-21",
+      "amount": 9900,
+      "direction": "debit",
+      "merchant": "동네 서점",
+      "category": "subscription",
+      "description": "전자책 월 이용료"
+    },
+    {
+      "occurredOn": "2026-09-01",
+      "amount": 8800,
+      "direction": "debit",
+      "merchant": "마을 식당",
+      "category": "food",
+      "description": "일시불"
+    },
+    {
+      "occurredOn": "2026-09-02",
+      "amount": 9100,
+      "direction": "debit",
+      "merchant": "마을 식당",
+      "category": "food",
+      "description": "일시불"
+    },
+    {
+      "occurredOn": "2026-09-03",
+      "amount": 4800,
+      "direction": "debit",
+      "merchant": "동네 카페",
+      "category": "cafe",
+      "description": "일시불"
+    },
+    {
+      "occurredOn": "2026-09-04",
+      "amount": 9700,
+      "direction": "debit",
+      "merchant": "마을 식당",
+      "category": "food",
+      "description": "일시불"
+    },
+    {
+      "occurredOn": "2026-09-05",
+      "amount": 10000,
+      "direction": "debit",
+      "merchant": "마을 식당",
+      "category": "food",
+      "description": "일시불"
+    },
+    {
+      "occurredOn": "2026-09-06",
+      "amount": 5100,
+      "direction": "debit",
+      "merchant": "동네 카페",
+      "category": "cafe",
+      "description": "일시불"
+    },
+    {
+      "occurredOn": "2026-09-07",
+      "amount": 10600,
+      "direction": "debit",
+      "merchant": "마을 식당",
+      "category": "food",
+      "description": "일시불"
+    },
+    {
+      "occurredOn": "2026-09-08",
+      "amount": 10900,
+      "direction": "debit",
+      "merchant": "마을 식당",
+      "category": "food",
+      "description": "일시불"
+    },
+    {
+      "occurredOn": "2026-09-09",
+      "amount": 5400,
+      "direction": "debit",
+      "merchant": "동네 카페",
+      "category": "cafe",
+      "description": "일시불"
+    },
+    {
+      "occurredOn": "2026-09-10",
+      "amount": 11500,
+      "direction": "debit",
+      "merchant": "마을 식당",
+      "category": "food",
+      "description": "일시불"
+    },
+    {
+      "occurredOn": "2026-09-11",
+      "amount": 11800,
+      "direction": "debit",
+      "merchant": "마을 식당",
+      "category": "food",
+      "description": "일시불"
+    },
+    {
+      "occurredOn": "2026-09-12",
+      "amount": 5700,
+      "direction": "debit",
+      "merchant": "동네 카페",
+      "category": "cafe",
+      "description": "일시불"
+    },
+    {
+      "occurredOn": "2026-09-13",
+      "amount": 12400,
+      "direction": "debit",
+      "merchant": "마을 식당",
+      "category": "food",
+      "description": "일시불"
+    },
+    {
+      "occurredOn": "2026-09-14",
+      "amount": 12700,
+      "direction": "debit",
+      "merchant": "마을 식당",
+      "category": "food",
+      "description": "일시불"
+    },
+    {
+      "occurredOn": "2026-09-15",
+      "amount": 6000,
+      "direction": "debit",
+      "merchant": "동네 카페",
+      "category": "cafe",
+      "description": "일시불"
+    },
+    {
+      "occurredOn": "2026-09-16",
+      "amount": 13300,
+      "direction": "debit",
+      "merchant": "마을 식당",
+      "category": "food",
+      "description": "일시불"
+    },
+    {
+      "occurredOn": "2026-09-17",
+      "amount": 13600,
+      "direction": "debit",
+      "merchant": "마을 식당",
+      "category": "food",
+      "description": "일시불"
+    },
+    {
+      "occurredOn": "2026-09-18",
+      "amount": 6300,
+      "direction": "debit",
+      "merchant": "동네 카페",
+      "category": "cafe",
+      "description": "일시불"
+    },
+    {
+      "occurredOn": "2026-09-19",
+      "amount": 14200,
+      "direction": "debit",
+      "merchant": "마을 식당",
+      "category": "food",
+      "description": "일시불"
+    },
+    {
+      "occurredOn": "2026-09-20",
+      "amount": 14500,
+      "direction": "debit",
+      "merchant": "마을 식당",
+      "category": "food",
+      "description": "일시불"
+    },
+    {
+      "occurredOn": "2026-09-21",
+      "amount": 6600,
+      "direction": "debit",
+      "merchant": "동네 카페",
+      "category": "cafe",
+      "description": "일시불"
+    },
+    {
+      "occurredOn": "2026-09-22",
+      "amount": 15100,
+      "direction": "debit",
+      "merchant": "마을 식당",
+      "category": "food",
+      "description": "일시불"
+    },
+    {
+      "occurredOn": "2026-09-23",
+      "amount": 15400,
+      "direction": "debit",
+      "merchant": "마을 식당",
+      "category": "food",
+      "description": "일시불"
+    },
+    {
+      "occurredOn": "2026-09-24",
+      "amount": 6900,
+      "direction": "debit",
+      "merchant": "동네 카페",
+      "category": "cafe",
+      "description": "일시불"
+    },
+    {
+      "occurredOn": "2026-09-25",
+      "amount": 16000,
+      "direction": "debit",
+      "merchant": "마을 식당",
+      "category": "food",
+      "description": "일시불"
+    },
+    {
+      "occurredOn": "2026-09-26",
+      "amount": 16300,
+      "direction": "debit",
+      "merchant": "마을 식당",
+      "category": "food",
+      "description": "일시불"
+    },
+    {
+      "occurredOn": "2026-09-27",
+      "amount": 7200,
+      "direction": "debit",
+      "merchant": "동네 카페",
+      "category": "cafe",
+      "description": "일시불"
+    },
+    {
+      "occurredOn": "2026-09-28",
+      "amount": 16900,
+      "direction": "debit",
+      "merchant": "마을 식당",
+      "category": "food",
+      "description": "일시불"
+    },
+    {
+      "occurredOn": "2026-09-29",
+      "amount": 17200,
+      "direction": "debit",
+      "merchant": "마을 식당",
+      "category": "food",
+      "description": "일시불"
+    },
+    {
+      "occurredOn": "2026-09-30",
+      "amount": 7500,
+      "direction": "debit",
+      "merchant": "동네 카페",
+      "category": "cafe",
+      "description": "일시불"
+    },
+    {
+      "occurredOn": "2026-09-02",
+      "amount": 14500,
+      "direction": "debit",
+      "merchant": "도시 교통",
+      "category": "transport",
+      "description": "일시불"
+    },
+    {
+      "occurredOn": "2026-09-04",
+      "amount": 13000,
+      "direction": "debit",
+      "merchant": "동네 약국",
+      "category": "health",
+      "description": "일시불"
+    },
+    {
+      "occurredOn": "2026-09-06",
+      "amount": 17500,
+      "direction": "debit",
+      "merchant": "작은 영화관",
+      "category": "entertainment",
+      "description": "일시불"
+    },
+    {
+      "occurredOn": "2026-09-08",
+      "amount": 26000,
+      "direction": "debit",
+      "merchant": "마을 마트",
+      "category": "groceries",
+      "description": "일시불"
+    },
+    {
+      "occurredOn": "2026-09-10",
+      "amount": 16500,
+      "direction": "debit",
+      "merchant": "도시 교통",
+      "category": "transport",
+      "description": "일시불"
+    },
+    {
+      "occurredOn": "2026-09-12",
+      "amount": 15000,
+      "direction": "debit",
+      "merchant": "동네 약국",
+      "category": "health",
+      "description": "일시불"
+    },
+    {
+      "occurredOn": "2026-09-14",
+      "amount": 19500,
+      "direction": "debit",
+      "merchant": "작은 영화관",
+      "category": "entertainment",
+      "description": "일시불"
+    },
+    {
+      "occurredOn": "2026-09-16",
+      "amount": 28000,
+      "direction": "debit",
+      "merchant": "마을 마트",
+      "category": "groceries",
+      "description": "일시불"
+    },
+    {
+      "occurredOn": "2026-09-18",
+      "amount": 18500,
+      "direction": "debit",
+      "merchant": "도시 교통",
+      "category": "transport",
+      "description": "일시불"
+    },
+    {
+      "occurredOn": "2026-09-20",
+      "amount": 17000,
+      "direction": "debit",
+      "merchant": "동네 약국",
+      "category": "health",
+      "description": "일시불"
+    },
+    {
+      "occurredOn": "2026-09-22",
+      "amount": 21500,
+      "direction": "debit",
+      "merchant": "작은 영화관",
+      "category": "entertainment",
+      "description": "일시불"
+    },
+    {
+      "occurredOn": "2026-09-24",
+      "amount": 30000,
+      "direction": "debit",
+      "merchant": "마을 마트",
+      "category": "groceries",
+      "description": "일시불"
+    },
+    {
+      "occurredOn": "2026-09-14",
+      "amount": 32800,
+      "direction": "debit",
+      "merchant": "온라인 상점",
+      "category": "shopping",
+      "description": "일시불"
+    },
+    {
+      "occurredOn": "2026-09-14",
+      "amount": 32800,
+      "direction": "debit",
+      "merchant": "온라인 상점",
+      "category": "shopping",
+      "description": "일시불"
+    },
+    {
+      "occurredOn": "2026-09-19",
+      "amount": 112000,
+      "direction": "debit",
+      "merchant": "생활 상점",
+      "category": "shopping",
+      "description": "일시불"
+    },
+    {
+      "occurredOn": "2026-09-25",
+      "amount": 2800000,
+      "direction": "credit",
+      "merchant": "급여 입금",
+      "category": "income",
+      "description": "급여"
+    },
+    {
+      "occurredOn": "2026-09-26",
+      "amount": 540000,
+      "direction": "debit",
+      "merchant": "카드 대금 이체",
+      "category": "transfer",
+      "description": "계좌 이체"
+    },
+    {
+      "occurredOn": "2026-09-28",
+      "amount": 5000,
+      "direction": "credit",
+      "merchant": "온라인 상점",
+      "category": "shopping",
+      "description": "부분 환불"
+    }
+  ],
+  "detections": {
+    "recurringCount": 5,
+    "anomalyCount": 3,
+    "items": [
+      {
+        "occurredOn": "2026-09-01",
+        "amount": 650000,
+        "direction": "debit",
+        "merchant": "집세",
+        "category": "housing",
+        "description": "자동이체",
+        "isRecurring": true,
+        "anomalyType": null
+      },
+      {
+        "occurredOn": "2026-09-01",
+        "amount": 17000,
+        "direction": "debit",
+        "merchant": "영상 구독",
+        "category": "subscription",
+        "description": "월 이용료",
+        "isRecurring": true,
+        "anomalyType": null
+      },
+      {
+        "occurredOn": "2026-09-05",
+        "amount": 10900,
+        "direction": "debit",
+        "merchant": "음악 구독",
+        "category": "subscription",
+        "description": "월 이용료",
+        "isRecurring": true,
+        "anomalyType": null
+      },
+      {
+        "occurredOn": "2026-09-10",
+        "amount": 69000,
+        "direction": "debit",
+        "merchant": "통신 요금",
+        "category": "utilities",
+        "description": "자동이체",
+        "isRecurring": true,
+        "anomalyType": null
+      },
+      {
+        "occurredOn": "2026-09-21",
+        "amount": 9900,
+        "direction": "debit",
+        "merchant": "동네 서점",
+        "category": "subscription",
+        "description": "전자책 월 이용료",
+        "isRecurring": true,
+        "anomalyType": null
+      },
+      {
+        "occurredOn": "2026-09-14",
+        "amount": 32800,
+        "direction": "debit",
+        "merchant": "온라인 상점",
+        "category": "shopping",
+        "description": "일시불",
+        "isRecurring": false,
+        "anomalyType": "duplicate"
+      },
+      {
+        "occurredOn": "2026-09-14",
+        "amount": 32800,
+        "direction": "debit",
+        "merchant": "온라인 상점",
+        "category": "shopping",
+        "description": "일시불",
+        "isRecurring": false,
+        "anomalyType": "duplicate"
+      },
+      {
+        "occurredOn": "2026-09-19",
+        "amount": 112000,
+        "direction": "debit",
+        "merchant": "생활 상점",
+        "category": "shopping",
+        "description": "일시불",
+        "isRecurring": false,
+        "anomalyType": "spike"
+      }
+    ]
+  },
+  "trend": {
+    "points": [
+      {
+        "month": "2026-04",
+        "total": 971800
+      },
+      {
+        "month": "2026-05",
+        "total": 981800
+      },
+      {
+        "month": "2026-06",
+        "total": 991800
+      },
+      {
+        "month": "2026-07",
+        "total": 1001800
+      },
+      {
+        "month": "2026-08",
+        "total": 1011800
+      },
+      {
+        "month": "2026-09",
+        "total": 1487900
+      }
+    ],
+    "comparison": {
+      "month": "2026-09",
+      "previousMonth": "2026-08",
+      "delta": 476100,
+      "percent": 47.1
+    }
+  },
+  "insights": [
+    {
+      "title": "사용하지 않는 전자책 구독 확인",
+      "body": "동네 서점 전자책 이용료가 매달 결제되고 있습니다. 최근 이용한 책이 없다면 구독을 정리해 보세요.",
+      "monthlySaving": 9900
+    },
+    {
+      "title": "식비를 주 단위로 점검해 보세요",
+      "body": "식당 이용을 주 1회 줄이고 집에서 한 끼를 준비하면 월 지출을 줄일 수 있습니다.",
+      "monthlySaving": 48000
+    },
+    {
+      "title": "동일한 결제 두 건을 확인하세요",
+      "body": "9월 14일 온라인 상점에서 32,800원이 두 번 결제되었습니다. 주문 내역과 취소 여부를 확인해 보세요.",
+      "monthlySaving": 32800
+    }
+  ]
+}

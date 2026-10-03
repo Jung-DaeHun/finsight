@@ -1,0 +1,76 @@
+@import "tailwindcss";
+
+:root {
+  --ink: #111111; --canvas: #ffffff; --on-primary: #ffffff;
+  --soft-cloud: #f5f5f5; --hairline: #cacacb; --hairline-soft: #e5e5e5;
+  --charcoal: #39393b; --ash: #4b4b4d; --mute: #707072; --stone: #9e9ea0;
+  --sale: #d30005; --sale-deep: #780700;
+  --success: #007d48; --success-bright: #1eaa52;
+  --info: #1151ff; --info-deep: #0034e3;
+  --accent-pink: #ed1aa0; --accent-pink-soft: #ffb0dd; --accent-pink-deep: #4c012d;
+  --accent-purple-soft: #beaffd; --accent-purple-pale: #d6d1ff; --accent-teal: #0a7281;
+  --scrim: rgba(17, 17, 17, 0.4);
+  --text-primary: var(--ink); --text-body: var(--charcoal); --text-secondary: var(--mute); --text-tertiary: var(--stone);
+  --text-inverse: var(--on-primary); --text-inverse-secondary: var(--stone);
+  --text-sale: var(--sale); --text-success: var(--success); --text-info: var(--info);
+  --surface-page: var(--canvas); --surface-soft: var(--soft-cloud); --surface-inverse: var(--ink); --surface-product: var(--soft-cloud);
+  --border-default: var(--hairline); --border-soft: var(--hairline-soft); --border-strong: var(--ink);
+  --cta-primary-bg: var(--ink); --cta-primary-fg: var(--on-primary);
+  --cta-secondary-bg: var(--soft-cloud); --cta-secondary-fg: var(--ink);
+  --cta-on-image-bg: var(--canvas); --cta-on-image-fg: var(--ink);
+  --link-color: var(--ink); --link-hover: var(--charcoal);
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --dur-press: 200ms; --dur-fast: 150ms; --dur-drawer: 300ms;
+  --press-scale: 0.5; --press-opacity: 0.5;
+  --radius-none: 0px; --radius-sm: 18px; --radius-md: 24px; --radius-lg: 30px; --radius-full: 9999px;
+  --space-xxs: 2px; --space-xs: 4px; --space-sm: 8px; --space-md: 12px;
+  --space-lg: 18px; --space-xl: 24px; --space-xxl: 30px; --space-section: 48px;
+  --container-max: 1440px; --gutter: 48px; --grid-gutter: 8px; --sidebar-width: 220px;
+  --hit-target: 44px; --control-height: 48px; --chip-height: 40px; --icon-button: 40px;
+  --fw-regular: 400; --fw-medium: 500; --fw-bold: 700;
+  --fs-96: 96px; --fs-32: 32px; --fs-24: 24px; --fs-16: 16px; --fs-14: 14px; --fs-12: 12px; --fs-9: 9px;
+  --lh-display: 0.9; --lh-tight: 1.2; --lh-body: 1.5; --lh-relaxed: 1.75;
+  --type-display-campaign-size: 96px;
+  --display-letter-spacing: -0.005em;
+}
+
+body {
+  --font-body: var(--font-inter), var(--font-noto-sans-kr), sans-serif;
+  --font-ui: var(--font-body);
+  --font-heading: var(--font-body);
+  --font-display: var(--font-bebas-neue), var(--font-noto-sans-kr), sans-serif;
+  --font-legal: var(--font-body);
+  --type-display-campaign: 400 var(--type-display-campaign-size)/0.9 var(--font-display);
+  --type-heading-xl: 500 32px/1.2 var(--font-heading);
+  --type-heading-lg: 500 24px/1.2 var(--font-heading);
+  --type-heading-md: 500 16px/1.75 var(--font-heading);
+  --type-body-md: 400 16px/1.5 var(--font-body);
+  --type-body-strong: 500 16px/1.5 var(--font-ui);
+  --type-button-lg: 500 24px/1.2 var(--font-ui);
+  --type-button-md: 500 16px/1.5 var(--font-ui);
+  --type-button-sm: 500 14px/1.5 var(--font-ui);
+  --type-link-md: 500 16px/1.75 var(--font-body);
+  --type-caption-md: 500 14px/1.5 var(--font-ui);
+  --type-caption-sm: 500 12px/1.5 var(--font-ui);
+  --type-utility-xs: 500 9px/1.75 var(--font-legal);
+  margin: 0;
+  background: var(--surface-page);
+  color: var(--text-primary);
+  font: var(--type-body-md);
+  -webkit-font-smoothing: antialiased;
+}
+
+@media (min-width: 1920px) { :root { --gutter: 80px; } }
+@media (max-width: 1023px) { :root { --space-section: 32px; --gutter: 36px; } }
+@media (max-width: 960px) { :root { --type-display-campaign-size: 64px; } }
+@media (max-width: 599px) { :root { --space-section: 24px; --gutter: 20px; --grid-gutter: 4px; --type-display-campaign-size: 48px; } }
+
+@theme inline {
+  --color-ink: var(--ink); --color-canvas: var(--canvas); --color-on-primary: var(--on-primary);
+  --color-soft-cloud: var(--soft-cloud); --color-hairline: var(--hairline); --color-hairline-soft: var(--hairline-soft);
+  --color-charcoal: var(--charcoal); --color-mute: var(--mute); --color-stone: var(--stone);
+  --color-sale: var(--sale); --color-success: var(--success);
+  --font-sans: var(--font-body); --font-heading: var(--font-heading); --font-display: var(--font-display);
+  --radius-pill: var(--radius-lg); --radius-input: var(--radius-md);
+  --ease-standard: var(--ease-standard);
+}
