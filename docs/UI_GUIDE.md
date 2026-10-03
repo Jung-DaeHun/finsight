@@ -45,10 +45,12 @@
 - 폰트: Inter(라틴·숫자) + Noto Sans KR(한글) 400/500/700, 디스플레이 숫자는 Bebas Neue 400. `next/font/google`로 로드
   - `--font-body/ui/heading: "Inter","Noto Sans KR",sans-serif` · `--font-display: "Bebas Neue","Noto Sans KR",sans-serif`
 - 자간 0 (워드마크만 −0.03em). 굵기는 대부분 500(Medium)
+- 한글 줄바꿈은 어절 단위(`body { word-break: keep-all }`). 긴 파일명·이메일만 `overflow-wrap: break-word`로 끊긴다
 
 | 용도 | 스타일 |
 |------|--------|
 | 랜딩 히어로 | 700 clamp(40px,5.6vw,76px)/1.08 heading, −0.02em |
+| 랜딩 섹션 제목 (h2) | 700 clamp(28px,3.2vw,40px)/1.15 heading, −0.02em. 아래 리드는 16px/1.65 charcoal |
 | 페이지 제목 (h1) | 500 32px/1.2 (`--type-heading-xl`) |
 | 섹션·모달 제목 (h2) | 500 24px/1.2 (`--type-heading-lg`) |
 | 본문 | 400 16px/1.5 (`--type-body-md`) |
@@ -65,7 +67,7 @@
 - 모션: 버튼 누름 `scale(.5)+opacity .5` 200ms, 막대 너비 300ms, 그 외 150ms standard ease. 스크롤·바운스 애니메이션 금지
 
 ## 컴포넌트 요약 (상세는 스킬)
-- **Button** — pill(30px), `primary`(잉크/흰 글자) · `secondary`(soft-cloud/잉크) · `on-image`(흰 배경, 잉크 배경 위에서) / 높이 sm 36 · md 48 · lg 64 / disabled는 hairline-soft 배경 + stone 글자
+- **Button** — pill(30px), `primary`(잉크/흰 글자) · `secondary`(soft-cloud/잉크) · `on-image`(흰 배경, 잉크 배경 위에서. **soft-cloud 면 위의 보조 버튼도 on-image** — secondary는 면과 같은 색이라 경계가 사라진다) / 높이 sm 36 · md 48 · lg 64 / disabled는 hairline-soft 배경 + stone 글자
 - **IconButton** — 원형 40px(목록 안 36px), `ghost`·`soft`, `aria-label` 필수
 - **Badge** — 흰 배경 + 1px hairline + pill, 12px. Pro 배지만 잉크 반전
 - **FilterChip** — 높이 40 pill, 활성 시 잉크로 완전 반전
