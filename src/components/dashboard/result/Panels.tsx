@@ -24,10 +24,21 @@ export function Delta({ view }: { view: AnalysisView }) {
   return <span className={`text-sm font-medium ${delta < 0 ? "text-success" : "text-ink"}`}>전월 대비 {change}</span>;
 }
 
+/** 가맹점별 최근 정기결제 1건. 월을 걸친 명세서에서 같은 구독이 월 금액에 두 번 더해지지 않게 한다. */
+function latestRecurring(view: AnalysisView): Transaction[] {
+  const latest = new Map<string, Transaction>();
+  for (const tx of view.detections?.items ?? []) {
+    if (!tx.isRecurring) continue;
+    const previous = latest.get(tx.merchant);
+    if (!previous || previous.occurredOn < tx.occurredOn) latest.set(tx.merchant, tx);
+  }
+  return [...latest.values()];
+}
+
 export function KpiPanel({ view }: { view: AnalysisView }) {
   const summary = view.summary;
   const days = summary ? periodDayCount(summary.period.from, summary.period.to) : 0;
-  const recurringSum = (view.detections?.items ?? []).filter((tx) => tx.isRecurring).reduce((sum, tx) => sum + tx.amount, 0);
+  const recurringSum = latestRecurring(view).reduce((sum, tx) => sum + tx.amount, 0);
   const detailed = !!view.detections && "items" in view.detections;
   return <>
     <div className={tileClass}><p className={captionClass}>총지출</p><p className={numberClass}>{formatWon(summary?.totalSpend ?? 0)}</p>
@@ -96,17 +107,12 @@ export function TrendPanel({ view }: { view: AnalysisView }) {
 }
 
 export function RecurringPanel({ view }: { view: AnalysisView }) {
-  const recurring = (view.detections?.items ?? []).filter((tx) => tx.isRecurring);
-  const latest = new Map<string, Transaction>();
-  for (const tx of recurring) {
-    const previous = latest.get(tx.merchant);
-    if (!previous || previous.occurredOn < tx.occurredOn) latest.set(tx.merchant, tx);
-  }
-  const sum = recurring.reduce((total, tx) => total + tx.amount, 0);
+  const latest = latestRecurring(view);
+  const sum = latest.reduce((total, tx) => total + tx.amount, 0);
   return <section aria-label="정기결제"><SectionHead title="정기결제" />
     {!view.detections || !("items" in view.detections) ? <LockCard title="정기결제" teaser={`${view.detections?.recurringCount ?? 0}건 발견`} description="어떤 구독이 언제 빠져나가는지 상세 목록은 Pro에서 볼 수 있습니다." /> : <>
       <p className={`${captionClass} mb-2`}>{view.detections.recurringCount}건 · 월 {formatWon(sum)}</p>
-      {latest.size === 0 ? <p className={captionClass}>발견된 정기결제가 없습니다.</p> : <ul>{[...latest.values()].map((tx) =>
+      {latest.length === 0 ? <p className={captionClass}>발견된 정기결제가 없습니다.</p> : <ul>{latest.map((tx) =>
         <li key={tx.merchant} className="flex items-center gap-3 border-b border-hairline-soft py-2.5 text-sm font-medium">
           <div className="min-w-0 flex-1 break-words">{tx.merchant}<p className={captionClass}>최근 결제 {formatShortDate(tx.occurredOn)}</p></div><span className={amountClass}>{formatWon(tx.amount)}</span>
         </li>)}</ul>}

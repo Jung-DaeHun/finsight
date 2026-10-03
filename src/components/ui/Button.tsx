@@ -26,7 +26,10 @@ export function Button({ children, variant = "primary", size = "md", fullWidth =
   const classes = `inline-flex items-center justify-center rounded-pill font-medium whitespace-nowrap transition-[transform,opacity] duration-200 ease-standard active:scale-50 active:opacity-50 ${variants[variant]} ${sizes[size]} ${fullWidth ? "w-full" : ""} ${disabled ? "!bg-hairline-soft !text-stone cursor-not-allowed active:scale-100 active:opacity-100" : ""} ${className}`;
   const content = <>{icon && <Icon name={icon} size={size === "sm" ? 16 : size === "lg" ? 24 : 20} />}{children}</>;
   if (href && !disabled) {
-    return <Link href={href} className={classes} onClick={props.onClick as MouseEventHandler<HTMLAnchorElement> | undefined}>{content}</Link>;
+    const onClick = props.onClick as MouseEventHandler<HTMLAnchorElement> | undefined;
+    // API 라우트(결제 등)는 Link의 prefetch·RSC 요청으로 실행되면 안 되므로 일반 이동으로 연다.
+    if (href.startsWith("/api/")) return <a href={href} className={classes} onClick={onClick}>{content}</a>;
+    return <Link href={href} className={classes} onClick={onClick}>{content}</Link>;
   }
   return <button {...props} type={type} disabled={disabled} className={classes}>{content}</button>;
 }
