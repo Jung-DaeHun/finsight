@@ -28,7 +28,7 @@ describe("J7: 설정과 분석 개별 삭제", () => {
   });
   it("Pro의 다음 결제일과 구독 관리 링크를 표시한다", () => {
     render(<Settings subscription={{ plan: "pro", currentPeriodEnd: "2026-10-29T00:00:00Z" }} used={2} items={[]} email="member@example.com" />);
-    expect(screen.getByText(/\$9\/월 · 다음 결제일 2026.10.29/)).toBeVisible();
+    expect(screen.getByText(/\$20\/월 · 다음 결제일 2026.10.29/)).toBeVisible();
     expect(screen.getByRole("link", { name: "구독 관리" })).toHaveAttribute("href", "/api/portal");
     expect(screen.queryByText("Pro로 업그레이드")).not.toBeInTheDocument();
   });

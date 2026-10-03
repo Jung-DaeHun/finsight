@@ -28,7 +28,7 @@ export function Settings({ subscription, used, items, email }: {
       <SectionHead title="구독" />
       <div className="flex flex-wrap items-center gap-4">
         <p className="min-w-0 flex-1"><b>{pro ? "Pro" : "Free"}</b>{pro
-          ? ` · $9/월${end ? subscription.cancelAtPeriodEnd ? ` · ${end}까지 Pro` : ` · 다음 결제일 ${end}` : ""}`
+          ? ` · $20/월${end ? subscription.cancelAtPeriodEnd ? ` · ${end}까지 Pro` : ` · 다음 결제일 ${end}` : ""}`
           : ` · 이번 달 분석 ${used}/${limits("free").monthlyAnalyses}회 사용`}</p>
         {pro ? <Button href="/api/portal" size="sm" variant="secondary">구독 관리<Icon name="external-link" size={16} /></Button>
           : <Button href="/api/checkout" size="sm">Pro로 업그레이드</Button>}

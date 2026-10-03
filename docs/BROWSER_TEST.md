@@ -217,7 +217,7 @@ admin.auth.admin.createUser({ email: `finsight-e2e-${Date.now()}@example.com`, p
 
 | 단계 | 기대 결과 |
 |---|---|
-| `/settings` | 구독 "Pro · $9/월" + "구독 관리" + 해지 후 데이터 유지 캡션, "분석 기록 (4)" (6.2). 삭제 버튼 이름에 파일명 포함(예: "분석 실패 삭제 (foreign-only.csv)"). 보는 동안 `/api/portal` 요청 0건 |
+| `/settings` | 구독 "Pro · $20/월" + "구독 관리" + 해지 후 데이터 유지 캡션, "분석 기록 (4)" (6.2). 삭제 버튼 이름에 파일명 포함(예: "분석 실패 삭제 (foreign-only.csv)"). 보는 동안 `/api/portal` 요청 0건 |
 | "구독 관리" 클릭 | `GET /api/portal`(document) 1건, mock에서는 `/settings`로 돌아옴 |
 | "2026년 9월 삭제 (card-a-2026-09.csv)" 클릭 | 그 행 안에 "취소" / "삭제" 버튼이 나타남 (브라우저 confirm 아님) |
 | "삭제" 클릭 | `DELETE /api/analyses/{id}` 204, "분석을 삭제했습니다.", "분석 기록 (3)" |

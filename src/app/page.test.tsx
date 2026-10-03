@@ -92,7 +92,7 @@ describe("J1 랜딩", () => {
     render(await Home());
     const pricing = within(screen.getByRole("region", { name: "요금제" }));
     expect(pricing.getByText("$0")).toBeVisible();
-    expect(pricing.getByText("$9")).toBeVisible();
+    expect(pricing.getByText("$20")).toBeVisible();
     expect(pricing.getByText("/ 월")).toBeVisible();
     const rows = within(pricing.getByRole("table", { name: "Free와 Pro 기능 비교" })).getAllByRole("row");
     expect(rows).toHaveLength(8);

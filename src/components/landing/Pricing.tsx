@@ -40,7 +40,7 @@ export function Pricing({ start, plan }: { start: { href: string; label: string 
       </div>
       <div className="flex flex-col gap-4 bg-ink p-8 text-on-primary max-[600px]:p-6">
         <h3 className="text-lg font-bold">Pro</h3>
-        <p className="font-display text-[clamp(56px,6vw,88px)] leading-[0.9]">$9<span className="font-sans text-sm font-medium"> / 월</span></p>
+        <p className="font-display text-[clamp(56px,6vw,88px)] leading-[0.9]">$20<span className="font-sans text-sm font-medium"> / 월</span></p>
         <p>여러 카드·계좌를 합쳐 새는 돈까지 찾을 때</p>
         {plan === null && <Button href="/signup" variant="on-image" fullWidth className="mt-auto">Pro 시작하기</Button>}
         {plan === "free" && <Button href="/api/checkout" variant="on-image" fullWidth className="mt-auto">Pro로 업그레이드</Button>}
