@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { expect, it } from "vitest";
 import { ERROR_MESSAGES } from "@/messages/errors";
 import { AnalysisList } from "./AnalysisList";
@@ -12,7 +12,8 @@ it("완료·실패는 상세 링크, 처리 중은 비활성 행으로 상태·�
   expect(screen.getByRole("heading", { name: /내 분석\s*\(3\)/ })).toBeVisible();
   expect(screen.getByRole("link", { name: /2026년 9월/ })).toHaveAttribute("href", "/dashboard/analyses/completed");
   expect(screen.getByText("카드.csv · 은행.xlsx")).toBeVisible();
-  expect(screen.getByText("2026.10.01")).toBeVisible();
+  // 생성 시각(UTC 23시)은 한국 날짜(다음 날)로 표시한다.
+  expect(within(screen.getByRole("link", { name: /2026년 9월/ })).getByText("2026.10.02")).toBeVisible();
   expect(screen.getByText("₩12,000")).toBeVisible();
   expect(screen.getByRole("link", { name: /분석 실패/ })).toHaveAttribute("href", "/dashboard/analyses/failed");
   expect(screen.getByText(ERROR_MESSAGES.file_encrypted)).toBeVisible();

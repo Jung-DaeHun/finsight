@@ -32,6 +32,12 @@ describe("J7: 설정과 분석 개별 삭제", () => {
     expect(screen.getByRole("link", { name: "구독 관리" })).toHaveAttribute("href", "/api/portal");
     expect(screen.queryByText("Pro로 업그레이드")).not.toBeInTheDocument();
   });
+  it("결제일·분석 생성일은 UTC 날짜가 아니라 한국 날짜로 표시한다", () => {
+    const items = [{ id: "late", status: "completed" as const, createdAt: "2026-10-01T16:00:00Z", filenames: ["카드.csv"], periodTo: "2026-09-30", totalSpend: 1000 }];
+    render(<Settings subscription={{ plan: "pro", currentPeriodEnd: "2026-10-28T20:00:00Z" }} used={1} items={items} email="member@example.com" />);
+    expect(screen.getByText(/다음 결제일 2026.10.29/)).toBeVisible();
+    expect(screen.getByText("카드.csv · 2026.10.02")).toBeVisible();
+  });
   it("기록이 없으면 빈 상태를 표시한다", () => {
     show(free, []);
     expect(screen.getByText("분석 기록이 없습니다.")).toBeVisible();

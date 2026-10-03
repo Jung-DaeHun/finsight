@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Icon } from "@/components/ui/Icon";
 import { SectionHead } from "@/components/ui/SectionHead";
-import { formatFullDate, formatMonthTitle, formatWon } from "@/lib/format";
+import { formatKstDate, formatMonthTitle, formatWon } from "@/lib/format";
 import { ERROR_MESSAGES } from "@/messages/errors";
 import type { AnalysisListItem } from "@/types";
 
@@ -15,7 +15,7 @@ export function AnalysisList({ items }: { items: AnalysisListItem[] }) {
           <span className="block break-all text-sm font-medium text-mute">{item.filenames.join(" · ")}</span>
           {item.status === "failed" && item.errorCode && <span className="mt-1 block text-xs text-sale">{ERROR_MESSAGES[item.errorCode]}</span>}
         </span>
-        <span className="shrink-0 text-sm font-medium text-mute max-[860px]:hidden">{formatFullDate(item.createdAt)}</span>
+        <span className="shrink-0 text-sm font-medium text-mute max-[860px]:hidden">{formatKstDate(item.createdAt)}</span>
         {item.status === "completed" && item.totalSpend !== undefined && <span className="shrink-0 text-right font-medium tabular-nums">{formatWon(item.totalSpend)}</span>}
         <Icon name="chevron-right" size={20} className="shrink-0" />
       </>;
