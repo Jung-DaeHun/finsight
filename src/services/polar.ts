@@ -64,6 +64,21 @@ export async function createPortalUrl(userId: string): Promise<string | null> {
   }
 }
 
+/** 웹훅이 늦게 오거나 재시도돼도 오래된 상태를 저장하지 않도록 Polar의 현재 구독 상태를 조회한다. */
+export async function getSubscription(id: string): Promise<{
+  customerId: string; status: string; cancelAtPeriodEnd: boolean; currentPeriodEnd: string | null;
+}> {
+  try {
+    const subscription = await polarClient().subscriptions.get({ id });
+    return {
+      customerId: subscription.customerId, status: subscription.status,
+      cancelAtPeriodEnd: subscription.cancelAtPeriodEnd, currentPeriodEnd: subscription.currentPeriodEnd?.toISOString() ?? null,
+    };
+  } catch {
+    throw new PolarServiceError();
+  }
+}
+
 export async function cancelSubscriptions(userId: string): Promise<void> {
   try {
     if (isMocked("polar")) {
