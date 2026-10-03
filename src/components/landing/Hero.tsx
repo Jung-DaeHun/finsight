@@ -5,6 +5,7 @@ import { Icon } from "@/components/ui/Icon";
 import { formatMonthTitle, formatWon } from "@/lib/format";
 import sample from "@/sample/analysis.json";
 import type { Category } from "@/types";
+import { CountUpWon } from "./CountUpWon";
 
 const categoryLabels: Record<Category, string> = {
   food: "식비", cafe: "카페·간식", groceries: "생활·마트", transport: "교통",
@@ -28,29 +29,29 @@ export function Hero({ start }: { start: { href: string; label: string } }) {
   const shade = (index: number) => shades[Math.min(index, shades.length - 1)];
   return <section aria-labelledby="hero-title" className="mx-auto grid max-w-[1440px] grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-center gap-12 px-(--gutter) pt-16 pb-16 max-[860px]:grid-cols-1 max-[860px]:gap-10 max-[860px]:pt-10 max-[860px]:pb-16">
     <div className="flex min-w-0 flex-col gap-6">
-      <h1 id="hero-title" className="font-heading text-[clamp(40px,5.6vw,76px)] leading-[1.08] font-bold tracking-[-0.02em] [text-wrap:balance]">명세서를 올리면<br />지출이 정리됩니다</h1>
-      <p className="max-w-[520px] text-lg leading-[1.65] text-charcoal">카드 명세서·은행 거래내역(CSV·엑셀)을 그대로 올리세요. 카드사마다 다른 형식은 AI가 읽고, 카테고리 분류와 요약, 새는 돈까지 찾아 드립니다.</p>
-      <div className="flex flex-wrap items-center gap-2 max-[600px]:flex-col max-[600px]:items-stretch">
+      <h1 id="hero-title" className="font-heading text-[clamp(40px,5.6vw,76px)] leading-[1.08] font-bold tracking-[-0.02em] [text-wrap:balance] motion-safe:animate-rise">명세서를 올리면<br />지출이 정리됩니다</h1>
+      <p className="max-w-[520px] text-lg leading-[1.65] text-charcoal [animation-delay:80ms] motion-safe:animate-rise">카드 명세서·은행 거래내역(CSV·엑셀)을 그대로 올리세요. 카드사마다 다른 형식은 AI가 읽고, 카테고리 분류와 요약, 새는 돈까지 찾아 드립니다.</p>
+      <div className="flex flex-wrap items-center gap-2 [animation-delay:160ms] max-[600px]:flex-col max-[600px]:items-stretch motion-safe:animate-rise">
         <Button href={start.href}>{start.label}</Button>
         <Button href="/sample" variant="secondary">샘플 결과 보기</Button>
       </div>
-      <ul aria-label="파일 보관 안내" className="flex max-w-[520px] list-none flex-col gap-2.5 border-t border-hairline-soft pt-5 text-sm font-medium text-charcoal">
+      <ul aria-label="파일 보관 안내" className="flex max-w-[520px] list-none flex-col gap-2.5 border-t border-hairline-soft pt-5 text-sm font-medium text-charcoal [animation-delay:240ms] motion-safe:animate-rise">
         {trust.map((item) => <li key={item} className="flex items-start gap-2.5">
           <Icon name="check" size={16} className="mt-0.5 shrink-0" />{item}
         </li>)}
       </ul>
     </div>
     <div role="region" aria-label="샘플 분석 미리보기" className="flex aspect-[5/4] min-w-0 items-center justify-center bg-soft-cloud p-12 max-[1100px]:p-6 max-[600px]:aspect-auto max-[600px]:p-4">
-      <div className="flex w-full max-w-[440px] min-w-0 flex-col gap-5 bg-canvas p-7 max-[1100px]:p-5">
+      <div className="flex w-full max-w-[440px] min-w-0 flex-col gap-5 bg-canvas p-7 [animation-delay:120ms] max-[1100px]:p-5 motion-safe:animate-rise">
         <div className="flex items-center justify-between gap-3">
           <p className="text-sm font-medium text-mute">{formatMonthTitle(summary.period.to)} · 신한카드 + KB국민은행</p>
           <Badge>샘플</Badge>
         </div>
         <div className="flex flex-col gap-2">
           <p className="text-sm font-medium text-mute">총지출</p>
-          <p className="font-display text-[clamp(56px,6vw,88px)] leading-[0.9]">{formatWon(summary.totalSpend)}</p>
+          <p className="font-display text-[clamp(56px,6vw,88px)] leading-[0.9]"><CountUpWon value={summary.totalSpend} /></p>
         </div>
-        <div role="img" aria-label="카테고리 비중" className="flex h-2.5 w-full gap-0.5">
+        <div role="img" aria-label="카테고리 비중" className="flex h-2.5 w-full origin-left gap-0.5 [animation-delay:400ms] motion-safe:animate-grow-x">
           {categories.map((item, index) => <span key={item.name}
             title={`${item.name} ${(item.amount / summary.totalSpend * 100).toFixed(1)}%`}
             className={`block min-w-0 flex-[var(--share)] ${shade(index)}`}

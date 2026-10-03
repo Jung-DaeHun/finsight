@@ -90,3 +90,11 @@ body {
   --radius-pill: var(--radius-lg); --radius-input: var(--radius-md);
   --ease-standard: var(--ease-standard);
 }
+
+/* 랜딩 히어로 진입 애니메이션(첫 로드 1회). 움직임 줄이기를 존중하도록 `motion-safe:`로만 쓴다. */
+@theme {
+  --animate-rise: rise 700ms var(--ease-standard) both;
+  --animate-grow-x: grow-x 900ms var(--ease-standard) both;
+  @keyframes rise { from { opacity: 0; translate: 0 16px; } }
+  @keyframes grow-x { from { scale: 0 1; } }
+}

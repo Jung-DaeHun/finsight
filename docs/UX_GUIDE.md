@@ -109,7 +109,7 @@ FinSight의 모든 화면은 아래 6단계 중 하나에 속하고, 각 화면�
 - **차트**: 막대에는 `role="img"` + `aria-label`(월 · 금액), 비중 스트립 세그먼트에는 `title`.
 - **아이콘**: 장식 아이콘은 `aria-hidden`, 아이콘만 있는 버튼은 `aria-label` 필수.
 - **터치 타깃** 최소 36px. 375px 폭에서 가로 스크롤이 생기면 안 된다.
-- **모션**: `prefers-reduced-motion: reduce`이면 막대 너비 transition과 버튼 누름 scale을 끈다.
+- **모션**: `prefers-reduced-motion: reduce`이면 막대 너비 transition과 버튼 누름 scale, 랜딩 히어로 진입 애니메이션과 총지출 카운트업을 끈다.
 
 ### 2.6 근접성 — 불안 옆에 안심, 문제 옆에 해결
 
