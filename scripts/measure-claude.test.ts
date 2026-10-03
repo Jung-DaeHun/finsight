@@ -19,4 +19,7 @@ it("Sonnet·Opus 각각 매핑 1회와 고유 가맹점 100개 분류 시간을 
   expect(classifyMerchants.mock.calls[0][0]).toHaveLength(100);
   expect(new Set(classifyMerchants.mock.calls[0][0]).size).toBe(100);
   expect(lines.join(" ")).toContain("10 ms");
+  // 최대 입력 예상 = 파일 수 × 매핑 + (100개 배치 수 ÷ 동시 2개) × 분류. 매핑·분류는 각각 10 ms로 측정된다.
+  expect(lines.join("")).toContain("최대 입력(1파일·1,200행) 예상: 70 ms (240초 이내)");
+  expect(lines.join("")).toContain("최대 입력(3파일·3,600행) 예상: 210 ms (240초 이내)");
 });

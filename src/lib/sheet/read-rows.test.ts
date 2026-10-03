@@ -36,6 +36,33 @@ function excel(rows: (string | number | boolean)[][], bookType: "xlsx" | "biff8"
   if (secondRows) XLSX.utils.book_append_sheet(book, XLSX.utils.aoa_to_sheet(secondRows), "둘째 시트");
   return XLSX.write(book, { type: "array", bookType });
 }
+// SheetJS는 BIFF5를 codepage 1252로만 쓴다. 같은 길이의 ASCII 자리표시자를 CP949 바이트로 바꾸고 CODEPAGE 레코드를 949로 고친다.
+function biff5Cp949(rows: string[][]): ArrayBuffer {
+  const placeholders = new Map<string, string>();
+  const ascii = rows.map((row) => row.map((cell) => {
+    if (/^[\x20-\x7e]*$/.test(cell)) return cell;
+    if (!placeholders.has(cell)) placeholders.set(cell, `~${placeholders.size}`.padEnd(cp949(cell).byteLength, "~"));
+    return placeholders.get(cell)!;
+  }));
+  const book = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(book, XLSX.utils.aoa_to_sheet(ascii), "첫 시트");
+  const out = new Uint8Array(XLSX.write(book, { type: "array", bookType: "biff5" }));
+  function replaceAll(from: number[], to: Uint8Array) {
+    let found = false;
+    for (let i = 0; i + from.length <= out.length; i++) {
+      if (from.every((byte, j) => out[i + j] === byte)) {
+        out.set(to, i);
+        found = true;
+      }
+    }
+    if (!found) throw new Error("fixture 패턴을 찾지 못함");
+  }
+  for (const [cell, placeholder] of placeholders) {
+    replaceAll([...placeholder].map((c) => c.charCodeAt(0)), new Uint8Array(cp949(cell)));
+  }
+  replaceAll([0x42, 0x00, 0x02, 0x00, 0xe4, 0x04], Uint8Array.of(0x42, 0x00, 0x02, 0x00, 0xb5, 0x03));
+  return out.buffer;
+}
 const formats = [
   { name: "UTF-8 BOM CSV", encode: (rows: string[][]) => utf8(`\uFEFF${csv(rows)}`), encoding: "utf-8" },
   { name: "UTF-8 CSV", encode: (rows: string[][]) => utf8(csv(rows)), encoding: "utf-8" },
@@ -47,6 +74,7 @@ const formats = [
   { name: "탭 CSV", encode: (rows: string[][]) => utf8(csv(rows, "\t")), encoding: "utf-8" },
   { name: "xlsx", encode: (rows: string[][]) => excel(rows), encoding: null },
   { name: "바이너리 xls", encode: (rows: string[][]) => excel(rows, "biff8"), encoding: null },
+  { name: "CP949 레거시 xls(BIFF5)", encode: biff5Cp949, encoding: null },
 ] as const;
 
 describe("readRows", () => {
@@ -108,6 +136,14 @@ describe("readRows", () => {
     XLSX.utils.book_append_sheet(book, sheet, "내역");
     expect(readRows(XLSX.write(book, { type: "array", bookType: "xlsx" })).rows)
       .toEqual([["날짜", "금액", "확인"], ["2026-09-01", "12,000", "TRUE"]]);
+  });
+
+  it.each(["xlsx", "biff8"] as const)("엑셀 기본 날짜 서식(m/d/yy) 셀도 YYYY-MM-DD로 읽는다 (%s)", (bookType) => {
+    const sheet = XLSX.utils.aoa_to_sheet([header, [46266, "가게", 12000]]);
+    sheet.A2.z = "m/d/yy";
+    const book = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(book, sheet, "내역");
+    expect(readRows(XLSX.write(book, { type: "array", bookType })).rows).toEqual(exampleRows);
   });
 
   it("R6: CP949 확장 문자가 들어 있는 HTML-xls도 엄격하게 디코딩한다", () => {
