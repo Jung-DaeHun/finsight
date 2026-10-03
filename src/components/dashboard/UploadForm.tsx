@@ -112,6 +112,18 @@ export function UploadForm({ plan, used, limit, maxFiles }: { plan: Plan; used: 
         addFiles(Array.from(event.currentTarget.files ?? []));
         event.currentTarget.value = "";
       }} />
+      <details className="group mt-3">
+        <summary className="flex min-h-9 w-fit cursor-pointer list-none items-center gap-1.5 text-sm font-medium [&::-webkit-details-marker]:hidden">
+          <Icon name="chevron-down" size={16} className="shrink-0 transition-transform duration-150 group-open:rotate-180" />
+          명세서 파일은 어디서 받나요?
+        </summary>
+        <ol className="mt-1 mb-2 flex list-decimal flex-col gap-1 pl-[22px] text-sm text-charcoal">
+          <li>카드사·은행 앱이나 홈페이지에 로그인합니다.</li>
+          <li>이용내역(거래내역) 조회 메뉴를 엽니다.</li>
+          <li>분석할 기간을 선택합니다.</li>
+          <li>엑셀 또는 CSV 파일로 저장합니다.</li>
+        </ol>
+      </details>
       {error && <div role="alert" className="mt-3 flex flex-wrap items-start gap-3 border border-sale p-4">
         <Icon name="alert-circle" size={18} className="mt-0.5 shrink-0 text-sale" />
         <div className="min-w-0 flex-1 basis-[180px]">
@@ -133,7 +145,13 @@ export function UploadForm({ plan, used, limit, maxFiles }: { plan: Plan; used: 
         </div>
         <Button type="submit" disabled={over || files.length === 0} className="max-w-full max-[600px]:h-auto max-[600px]:min-h-12 max-[600px]:whitespace-normal max-[600px]:py-3">{over ? "이번 달 분석 횟수를 모두 사용했습니다" : startLabel}</Button>
       </div>
-      {over && <p className="mt-3 text-sm font-medium text-mute">{ERROR_MESSAGES.monthly_limit}</p>}
+      {over && <div className="mt-3 flex flex-wrap items-center justify-end gap-x-4 gap-y-2 text-right text-sm font-medium text-mute">
+        <div>
+          <p>{ERROR_MESSAGES.monthly_limit}</p>
+          {plan === "free" && <p>Pro는 매월 {limits("pro").monthlyAnalyses}회까지 분석할 수 있습니다.</p>}
+        </div>
+        {plan === "free" && <Button href="/api/checkout" size="sm">Pro로 업그레이드</Button>}
+      </div>}
     </form>}
   </section>;
 }

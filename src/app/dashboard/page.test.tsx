@@ -28,18 +28,20 @@ it("J2: 인증·정체 복구 후 본인 원장과 목록으로 빈 화면을 �
   expect(screen.queryByRole("heading", { name: /내 분석/ })).not.toBeInTheDocument();
   expect(screen.getByText("이번 달 분석")).toBeVisible();
   expect(screen.getByText("2 / 5회")).toBeVisible();
-  for (const [name, href] of [["새 분석", "#upload"], ["파일 올리기", "#upload"], ["샘플 결과 체험", "/sample"]]) {
+  for (const [name, href] of [["파일 올리기", "#upload"], ["샘플 결과 보기", "/sample"]]) {
     expect(screen.getByRole("link", { name })).toHaveAttribute("href", href);
   }
-  for (const read of [mocks.getUserPlan, mocks.countMonthlyUsage, mocks.listAnalyses]) {
-    expect(read).toHaveBeenCalledWith("owner");
-    expect(mocks.recoverStaleAnalyses.mock.invocationCallOrder[0]).toBeLessThan(read.mock.invocationCallOrder[0]);
-  }
+  // 빈 상태에서는 같은 목적지의 primary가 둘이 되지 않도록 `새 분석` 대신 `파일 올리기`만 둔다(UX_GUIDE 2.3·2.4).
+  expect(screen.queryByRole("link", { name: "새 분석" })).not.toBeInTheDocument();
+  // 정체 복구는 listAnalyses 안에서 하므로 페이지가 따로 호출하지 않는다.
+  for (const read of [mocks.getUserPlan, mocks.countMonthlyUsage, mocks.listAnalyses]) expect(read).toHaveBeenCalledWith("owner");
+  expect(mocks.recoverStaleAnalyses).not.toHaveBeenCalled();
 });
 it("기록이 있으면 빈 상태 대신 완료 목록과 Free 잠금 카드를 표시한다", async () => {
   mocks.listAnalyses.mockResolvedValue([{ id: "analysis", status: "completed", createdAt: "2026-10-01T00:00:00Z", filenames: ["명세서.csv"], totalSpend: 12000, periodTo: "2026-09-30" }]);
   render(await DashboardPage());
   expect(screen.queryByText("첫 명세서를 올려 보세요")).not.toBeInTheDocument();
+  expect(screen.getByRole("link", { name: "새 분석" })).toHaveAttribute("href", "#upload");
   expect(screen.getByRole("heading", { name: /내 분석\s*\(1\)/ })).toBeVisible();
   expect(screen.getByRole("link", { name: /2026년 9월/ })).toHaveAttribute("href", "/dashboard/analyses/analysis");
   expect(screen.getByText("카드·계좌 여러 개를 한 번에")).toBeVisible();

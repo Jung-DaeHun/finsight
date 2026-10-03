@@ -21,7 +21,7 @@ MVP 속도 최우선. 관리형 서비스(Supabase, Vercel, Polar)로 인프라�
 **트레이드오프**: RLS가 아니라 애플리케이션 코드가 소유권을 지킨다. 소유권 조건 누락을 막기 위해 조회를 `lib/data` 한 곳으로 모은다.
 
 ### ADR-004: 결제는 Polar
-**결정**: Polar 구독(Pro $9/월), `customerExternalId = Supabase user id`. 구독 상태 `active`·`trialing`·`past_due`를 Pro로 보고, `subscription.revoked`에서 Free로 바꾼다.
+**결정**: Polar 구독(Pro $20/월), `customerExternalId = Supabase user id`. 구독 상태 `active`·`trialing`·`past_due`를 Pro로 보고, `subscription.revoked`에서 Free로 바꾼다.
 **이유**: Merchant of Record라 세금 처리를 대신 해준다. 해지해도 기간 끝까지 `active`로 유지되는 Polar 동작과 맞다.
 **트레이드오프**: 한국어·원화 서비스인데 결제는 USD다. 국내 PG는 MVP 이후 검토한다.
 

@@ -10,8 +10,8 @@ export function AuthShell({ children }: { children: ReactNode }) {
   </main>;
 }
 
-export function GoogleButton({ disabled, onClick }: { disabled: boolean; onClick: () => void }) {
-  return <button type="button" disabled={disabled} onClick={onClick} className="flex h-12 w-full items-center justify-center gap-2.5 rounded-pill border border-hairline bg-canvas font-medium text-ink disabled:cursor-not-allowed disabled:bg-hairline-soft disabled:text-stone">
+export function GoogleButton({ disabled, onClick, describedBy }: { disabled: boolean; onClick: () => void; describedBy?: string }) {
+  return <button type="button" disabled={disabled} onClick={onClick} aria-describedby={describedBy} className="flex h-12 w-full items-center justify-center gap-2.5 rounded-pill border border-hairline bg-canvas font-medium text-ink disabled:cursor-not-allowed disabled:bg-hairline-soft disabled:text-stone">
     <span aria-hidden="true" className="font-heading font-bold leading-none">G</span>Google로 계속하기
   </button>;
 }

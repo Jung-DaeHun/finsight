@@ -51,7 +51,7 @@ export function ResetPasswordForm({ canUpdatePassword }: { canUpdatePassword: bo
   return <AuthShell>
     <h1 className="text-2xl font-medium leading-tight">비밀번호 재설정</h1>
     {sent ? <>
-      <p className="text-mute"><b className="break-all text-ink">{email.trim()}</b>로 재설정 링크를 보냈습니다.</p>
+      <p className="text-mute"><b className="break-all text-ink">{email.trim()}</b> 메일함으로 재설정 링크를 보냈습니다.</p>
       <Button fullWidth href="/login">로그인으로 돌아가기</Button>
     </> : <form noValidate onSubmit={submit} className="flex flex-col gap-4" aria-busy={busy}>
       <p className="text-mute">{canUpdatePassword ? "새 비밀번호를 입력해 주세요." : "가입한 이메일로 재설정 링크를 보내드립니다."}</p>

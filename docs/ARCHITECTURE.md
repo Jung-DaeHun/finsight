@@ -18,9 +18,14 @@ src/
 │   ├── auth/confirm/route.ts        # 이메일 인증·비밀번호 재설정 (token_hash)
 │   ├── api/                         # 5.4 참고
 │   ├── error.tsx  not-found.tsx
-├── components/{ui,landing,dashboard}/
+├── components/
+│   ├── ui/ landing/ auth/
+│   └── dashboard/{result,settings}/
 ├── lib/
 │   ├── supabase/{server,browser,admin}.ts   # admin은 'server-only'
+│   ├── auth.ts       # getUserId — getClaims()의 sub (server-only)
+│   ├── auth-flow.ts  # 보호 경로·인증 리다이렉트·입력 검증 (순수 함수)
+│   ├── mock.ts       # isMocked — MOCK_SERVICES env만 읽음
 │   ├── data/         # server-only 조회·RPC 래퍼, 모든 사용자 쿼리에 claims.sub 소유권 조건
 │   ├── sheet/        # readRows, normalize (순수 함수)
 │   ├── analysis/     # summarize, detect, monthlyTrend (순수 함수)
@@ -30,6 +35,9 @@ src/
 │   └── log.ts        # logError(event, meta) — 파일 내용 기록 금지
 ├── services/
 │   ├── claude.ts
+│   ├── claude-config.ts  # timeout·재시도·배치·max_tokens 상수
+│   ├── claude-errors.ts  # ClaudeServiceError
+│   ├── claude-mock.ts    # MOCK_SERVICES=claude일 때의 fixture mock
 │   ├── polar.ts
 │   ├── analysis-pipeline.ts
 │   └── deletion.ts   # Storage·Polar·DB 삭제 순서와 재시도
@@ -113,6 +121,7 @@ supabase/migrations/
 - 원본 저장 전에 uploads와 서버 생성 경로를 기록한다. 업로드 실패/강제 종료로 일부 객체만 있어도 `{user_id}/{analysis_id}/` prefix로 정리할 수 있다. 파일 목록은 페이지를 끝까지 순회하며 Storage의 '폴더' 이름만 삭제 요청하지 않는다.
 - 회원 탈퇴 순서: ① Polar에서 `customerExternalId = claims.sub`로 현재 구독 조회(로컬 subscriptions 유무와 무관) → 청구 가능한 모든 구독 취소 확인, 실패 시 502 `subscription_cancel_failed`로 중단 → ② 사용자 Storage prefix 전체 삭제·확인, 실패 시 502 `storage_delete_failed` → ③ auth 사용자 삭제(DB cascade), 실패 시 502 `account_delete_failed`.
 - 앞 단계가 실패하면 뒤 단계를 실행하지 않으므로 재시도에 필요한 계정·연결 정보가 남는다. 이미 취소된 구독·삭제된 객체는 재시도 시 성공으로 처리한다. 탈퇴 도중 처리 중이던 분석은 auth 삭제 cascade로 함께 정리된다.
+- ③ 이후 사용자 Storage prefix를 한 번 더 지운다. ②와 ③ 사이에 진행 중이던 업로드가 남긴 원본을 정리하기 위해서다. 계정은 이미 삭제됐으므로 이 단계가 실패해도 탈퇴는 성공으로 두고 `logError`로 코드만 남긴다.
 
 ### 5.4 인터페이스
 
@@ -123,6 +132,7 @@ type AnalysisStatus = 'processing' | 'completed' | 'failed'
 type AnalysisErrorCode = 'not_transactions' | 'mapping_failed' | 'too_many_invalid_rows'
   | 'file_unreadable' | 'file_encrypted' | 'llm_unavailable' | 'timeout'
   | 'too_many_rows' | 'unsupported_encoding' | 'unsupported_currency' | 'storage_upload_failed'
+  | 'internal_error'            // DB 장애 등 파일과 무관한 실패 (uploadId 없음, API 500)
 type ApiErrorCode = 'unauthorized' | 'not_found' | 'file_too_large' | 'too_many_files'
   | 'monthly_limit' | 'duplicate_file' | 'already_pro' | 'pro_required'
   | 'analysis_in_progress' | 'storage_delete_failed'
@@ -191,6 +201,7 @@ generateInsights(input: { summary; detections; trend? }): Promise<Insight[]> // 
 // polar.ts
 createCheckout(userId: string, email: string): Promise<string>   // checkout URL
 cancelSubscriptions(userId: string): Promise<void> // Polar에서 현재 구독을 조회하고 추가 청구 중단 확인
+getSubscription(id: string): Promise<{ customerId; status; cancelAtPeriodEnd; currentPeriodEnd }> // 웹훅이 payload 대신 저장할 현재 상태
 // analysis-pipeline.ts
 runAnalysis(userId: string, analysisId: string, plan: Plan, files: { uploadId: string; bytes: ArrayBuffer }[]): Promise<void>
 // lib/data — server-only RPC 래퍼, userId는 검증된 claims.sub만 전달
@@ -217,7 +228,7 @@ toAnalysisView(input: { row: AnalysisRow; transactions: Transaction[]; trend: Mo
 
 | 메서드 · 경로 | 요청 | 성공 | 실패 |
 |---|---|---|---|
-| `POST /api/analyses` | multipart 파일 1~3개 | `201 { analysisId }` | 400 크기·개수 검증, 409 `duplicate_file`/`analysis_in_progress`, 429 `monthly_limit`, 422 파싱·통화·분석 실패, 504 `timeout` |
+| `POST /api/analyses` | multipart 파일 1~3개 | `201 { analysisId }` | 400 크기·개수 검증, 409 `duplicate_file`(완료 분석 또는 같은 요청 안의 같은 해시)/`analysis_in_progress`, 429 `monthly_limit`, 422 파싱·통화·분석 실패, 500 `internal_error`, 504 `timeout` |
 | `DELETE /api/analyses/[id]` | – | `204` | 404, 409 `analysis_in_progress`, 502 `storage_delete_failed` |
 | `POST /api/analyses/[id]/insights` | – | `200 { insights }` | 403 `pro_required`, 404, 504 `timeout` |
 | `GET /api/checkout` | – | 302 Polar | 401, 409 `already_pro` |
@@ -275,7 +286,7 @@ toAnalysisView(input: { row: AnalysisRow; transactions: Transaction[]; trend: Mo
 | 키 관리 | `SUPABASE_SECRET_KEY`, `ANTHROPIC_API_KEY`, `POLAR_*`는 서버 전용, admin 클라이언트에 `import 'server-only'` |
 | 서비스 키 사용 시 | 사용자 요청에서는 `user_id = claims.sub`와 대상 row 소유권을 함께 검사. 웹훅은 검증된 Polar external ID를 사용자에 매핑. 요청값이나 소유권 미검증 DB row만으로 권한 판단 금지 |
 | 인증 확인 | `getClaims()` 사용 (`getSession()`으로 권한 판단 금지) |
-| 구독 변경 | 실제 결제 모드는 서명 검증된 웹훅으로만 (`@polar-sh/nextjs` `Webhooks`). 명시적 Polar mock 모드의 예외는 11.2에 한정 |
+| 구독 변경 | 실제 결제 모드는 서명 검증된 웹훅으로만 (`@polar-sh/nextjs` `Webhooks`). 이벤트 순서 역전·재시도로 오래된 상태를 덮어쓰지 않도록 payload 대신 Polar에서 현재 구독 상태를 다시 조회해 저장한다. 명시적 Polar mock 모드의 예외는 11.2에 한정 |
 | 파일 업로드 | 서버가 크기·개수·행수 검증, 저장 경로는 서버가 생성, 원본 파일명은 텍스트로만 표시 |
 | 파서 자원 고갈 | 1MB 입력 + 시트 1,200행(`sheetRows: 1201`) (5.2.1). 요청 단위 실패라 압축 해제 사전 검사는 생략 |
 | XSS | 가맹점명·인사이트는 React 텍스트로만 렌더, `dangerouslySetInnerHTML`·마크다운 렌더 금지 |

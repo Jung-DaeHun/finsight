@@ -37,7 +37,9 @@ export async function POST(request: Request): Promise<Response> {
       const bytes = await file.arrayBuffer();
       return { filename: file.name, bytes, fileHash: createHash("sha256").update(Buffer.from(bytes)).digest("hex") };
     }));
-    if (await findCompletedDuplicate(userId, sources.map((file) => file.fileHash))) {
+    const hashes = sources.map((file) => file.fileHash);
+    // 한 요청 안의 같은 파일도 거래가 이중 집계되므로 중복으로 거부한다.
+    if (new Set(hashes).size !== hashes.length || await findCompletedDuplicate(userId, hashes)) {
       return apiError("duplicate_file", 409);
     }
     ({ analysisId } = await startAnalysis(userId, plan));
@@ -67,8 +69,10 @@ export async function POST(request: Request): Promise<Response> {
     if (!pipelineStarted) {
       if (userId && analysisId) {
         try {
+          // uploads 기록 같은 DB 오류는 원본 저장 실패가 아니므로 internal_error로 남긴다.
           await failAnalysis(userId, analysisId, {
-            code: "storage_upload_failed", ...(uploadId === undefined ? {} : { uploadId }),
+            code: error instanceof PipelineError ? error.code : "internal_error",
+            ...(uploadId === undefined ? {} : { uploadId }),
           });
         } catch {
           // 원본·경로를 유지하고 DB 복구 후 다음 접근에서 정체 분석을 복구한다.
@@ -78,7 +82,8 @@ export async function POST(request: Request): Promise<Response> {
         code, ...(analysisId === undefined ? {} : { analysisId }), durationMs: Date.now() - startedAt,
       });
     }
-    const status = error instanceof PipelineError ? (code === "timeout" ? 504 : 422)
+    const status = code === "internal_error" ? 500
+      : error instanceof PipelineError ? (code === "timeout" ? 504 : 422)
       : code === "monthly_limit" ? 429
       : code === "analysis_in_progress" ? 409
       : code === "not_found" ? 404 : 500;

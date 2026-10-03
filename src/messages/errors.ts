@@ -8,7 +8,7 @@ export const ERROR_MESSAGES: Record<AnalysisErrorCode | ApiErrorCode, string> = 
   file_encrypted: "암호가 걸린 파일입니다. 엑셀에서 열고 [파일 → 정보 → 통합 문서 보호 → 암호 설정]에서 암호를 지운 뒤 다시 저장해 올려 주세요.",
   llm_unavailable: "분석 서비스에 연결하지 못했습니다. 잠시 후 다시 업로드해 주세요. 분석 횟수는 차감되지 않았습니다.",
   timeout: "분석 시간이 초과되었습니다. 다시 업로드해 주세요. 분석 횟수는 차감되지 않았습니다.",
-  too_many_rows: "시트가 1,200행을 넘습니다.",
+  too_many_rows: "시트가 1,200행을 넘습니다. 기간을 나눠 다시 내려받아 주세요.",
   unsupported_encoding: "파일의 문자 인코딩을 읽을 수 없습니다. UTF-8 또는 EUC-KR(CP949)로 저장한 뒤 다시 올려 주세요.",
   unsupported_currency: "원화(KRW) 금액 열이 없는 외화 명세서는 분석할 수 없습니다. 원화 환산 금액이 포함된 명세서를 받아 주세요.",
   storage_upload_failed: "원본 파일을 저장하지 못했습니다. 잠시 후 다시 업로드해 주세요. 분석 횟수는 차감되지 않았습니다.",

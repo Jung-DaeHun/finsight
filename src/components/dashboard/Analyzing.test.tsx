@@ -17,3 +17,9 @@ it("2.1: 다섯 단계를 시간으로 넘기되 마지막 단계에서 응답�
   unmount();
   expect(vi.getTimerCount()).toBe(0);
 });
+it("B14: 아직 시작하지 않은 단계도 읽을 수 있는 mute 글자로 표시한다", () => {
+  render(<Analyzing filenames={["카드.csv"]} />);
+  const pending = screen.getByText("요약 만드는 중");
+  expect(pending).toHaveClass("text-mute");
+  expect(pending).not.toHaveClass("text-stone");
+});

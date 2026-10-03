@@ -32,8 +32,9 @@ export function VerifySent({ email }: { email: string }) {
   return <>
     <div className="flex size-11 items-center justify-center rounded-[18px] bg-soft-cloud"><Icon name="mail" size={22} /></div>
     <h1 className="text-2xl font-medium leading-tight">메일함을 확인해 주세요</h1>
-    <p className="text-mute"><b className="break-all text-ink">{email}</b>로 인증 링크를 보냈습니다. 링크를 열면 가입이 완료됩니다. 다른 기기에서 열어도 됩니다.</p>
+    <p className="text-mute"><b className="break-all text-ink">{email}</b> 메일함으로 인증 링크를 보냈습니다. 링크를 열면 가입이 완료됩니다. 다른 기기에서 열어도 됩니다.</p>
     <AuthFeedback error={error} notice={notice} />
+    <p className="text-sm font-medium text-mute">메일이 오지 않으면 스팸함을 확인해 주세요.</p>
     <Button variant="secondary" fullWidth disabled={busy} onClick={resend}>인증 메일 다시 보내기</Button>
   </>;
 }

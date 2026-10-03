@@ -13,6 +13,8 @@ const captionClass = "text-sm font-medium text-mute";
 const tileClass = "flex min-w-0 flex-col gap-2 bg-soft-cloud p-5";
 const numberClass = "font-display text-[32px] leading-none tracking-[0.01em] break-words";
 const shades = ["bg-ink", "bg-charcoal", "bg-mute", "bg-stone", "bg-hairline"];
+// Free에서 0건이면 "0건 발견" 잠금 카드 대신 이 캡션만 둔다. 업그레이드 유도는 추이·인사이트 잠금 카드에 맡긴다.
+const notFound = "이번 분석에서는 발견되지 않았습니다.";
 
 export function Delta({ view }: { view: AnalysisView }) {
   const comparison = view.trend?.comparison;
@@ -45,8 +47,8 @@ export function KpiPanel({ view }: { view: AnalysisView }) {
       {"trend" in view ? <Delta view={view} /> : <p className={captionClass}>{summary?.transactionCount ?? 0}건</p>}
     </div>
     <div className={tileClass}><p className={captionClass}>일평균</p><p className={numberClass}>{formatWon(days ? Math.round((summary?.totalSpend ?? 0) / days) : 0)}</p></div>
-    <div className={tileClass}><p className={captionClass}>정기결제</p><p className={numberClass}>{view.detections?.recurringCount ?? 0}건</p><p className={captionClass}>{detailed ? `월 ${formatWon(recurringSum)}` : "상세는 Pro"}</p></div>
-    <div className={tileClass}><p className={captionClass}>이상거래</p><p className={numberClass}>{view.detections?.anomalyCount ?? 0}건</p><p className={captionClass}>{detailed ? "중복 결제 · 급증 탐지" : "상세는 Pro"}</p></div>
+    <div className={tileClass}><p className={captionClass}>정기결제</p><p className={numberClass}>{view.detections?.recurringCount ?? 0}건</p>{(detailed || !!view.detections?.recurringCount) && <p className={captionClass}>{detailed ? `월 ${formatWon(recurringSum)}` : "상세는 Pro"}</p>}</div>
+    <div className={tileClass}><p className={captionClass}>이상거래</p><p className={numberClass}>{view.detections?.anomalyCount ?? 0}건</p>{(detailed || !!view.detections?.anomalyCount) && <p className={captionClass}>{detailed ? "중복 결제 · 급증 탐지" : "상세는 Pro"}</p>}</div>
   </>;
 }
 
@@ -87,9 +89,10 @@ export function TopMerchantsPanel({ view }: { view: AnalysisView }) {
 }
 
 export function TrendPanel({ view }: { view: AnalysisView }) {
+  const { mode } = useResultContext();
   const points = view.trend?.points.slice(-6) ?? [];
   const max = Math.max(0, ...points.map((point) => point.total));
-  return <section aria-label="월별 추이"><SectionHead title="월별 추이" />
+  return <section aria-label="월별 추이"><SectionHead title="월별 추이" pro={mode === "sample"} />
     {!("trend" in view) ? <LockCard title="월별 추이 · 전월 대비" description="최근 6개월 지출 흐름을 Pro에서 볼 수 있습니다." /> : <>
       <div className="flex h-[180px] items-end gap-3">
         {points.map((point, i) => <div key={point.month} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1.5">
@@ -107,10 +110,13 @@ export function TrendPanel({ view }: { view: AnalysisView }) {
 }
 
 export function RecurringPanel({ view }: { view: AnalysisView }) {
+  const { mode } = useResultContext();
   const latest = latestRecurring(view);
   const sum = latest.reduce((total, tx) => total + tx.amount, 0);
-  return <section aria-label="정기결제"><SectionHead title="정기결제" />
-    {!view.detections || !("items" in view.detections) ? <LockCard title="정기결제" teaser={`${view.detections?.recurringCount ?? 0}건 발견`} description="어떤 구독이 언제 빠져나가는지 상세 목록은 Pro에서 볼 수 있습니다." /> : <>
+  return <section aria-label="정기결제"><SectionHead title="정기결제" pro={mode === "sample"} />
+    {!view.detections || !("items" in view.detections) ? view.detections?.recurringCount
+      ? <LockCard title="정기결제" teaser={`${view.detections.recurringCount}건 발견`} description="어떤 구독이 언제 빠져나가는지 상세 목록은 Pro에서 볼 수 있습니다." />
+      : <p className={captionClass}>{notFound}</p> : <>
       <p className={`${captionClass} mb-2`}>{view.detections.recurringCount}건 · 월 {formatWon(sum)}</p>
       {latest.length === 0 ? <p className={captionClass}>발견된 정기결제가 없습니다.</p> : <ul>{latest.map((tx) =>
         <li key={tx.merchant} className="flex items-center gap-3 border-b border-hairline-soft py-2.5 text-sm font-medium">
@@ -121,9 +127,12 @@ export function RecurringPanel({ view }: { view: AnalysisView }) {
 }
 
 export function AnomalyPanel({ view }: { view: AnalysisView }) {
+  const { mode } = useResultContext();
   const anomalies = (view.detections?.items ?? []).filter((tx) => tx.anomalyType !== null);
-  return <section aria-label="이상거래"><SectionHead title="이상거래" />
-    {!view.detections || !("items" in view.detections) ? <LockCard title="이상거래" teaser={`${view.detections?.anomalyCount ?? 0}건 발견`} description="중복 결제·지출 급증의 날짜, 가맹점, 금액을 Pro에서 확인하세요." />
+  return <section aria-label="이상거래"><SectionHead title="이상거래" pro={mode === "sample"} />
+    {!view.detections || !("items" in view.detections) ? view.detections?.anomalyCount
+      ? <LockCard title="이상거래" teaser={`${view.detections.anomalyCount}건 발견`} description="중복 결제·지출 급증의 날짜, 가맹점, 금액을 Pro에서 확인하세요." />
+      : <p className={captionClass}>{notFound}</p>
       : anomalies.length === 0 ? <p className={captionClass}>발견된 이상거래가 없습니다.</p> : <ul>{anomalies.map((tx, i) =>
         <li key={i} className="flex items-start gap-3 border-b border-hairline-soft py-2.5 text-sm font-medium max-[600px]:flex-wrap">
           <Badge>{tx.anomalyType === "duplicate" ? "중복 결제" : "급증"}</Badge>

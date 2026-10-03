@@ -14,6 +14,16 @@ it("완료된 빈 인사이트 배열은 재생성 버튼 없이 월 0원으로 
   expect(screen.queryByRole("button", { name: "인사이트 생성" })).not.toBeInTheDocument();
 });
 
+it("AI가 낸 절약액 합계는 분석 기간 총지출을 넘겨 표시하지 않는다", () => {
+  const summary = {
+    totalSpend: 10_000, byCategory: {}, topMerchants: [], period: { from: "2026-09-01", to: "2026-09-30" },
+    transactionCount: 3, skippedRows: 0,
+  };
+  const insights = [1, 2, 3].map((i) => ({ title: `제안 ${i}`, body: "내용", monthlySaving: 10_000 }));
+  render(<InsightsPanel view={{ id: "over-saving", status: "completed", summary, insights }} />);
+  expect(screen.getByText("월 ₩10,000")).toBeVisible();
+});
+
 it("다른 분석으로 바뀐 뒤 이전 요청이 끝나도 인사이트를 섞지 않는다", async () => {
   let resolve!: (response: Response) => void;
   vi.stubGlobal("fetch", vi.fn(() => new Promise<Response>((done) => { resolve = done; })));
