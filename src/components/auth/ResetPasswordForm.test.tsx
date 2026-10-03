@@ -27,7 +27,10 @@ it("J1.3 token_hash 확인 경로로 재설정 메일을 보내고 발송 안내
   render(<ResetPasswordForm canUpdatePassword={false} />);
   fireEvent.change(screen.getByLabelText("이메일"), { target: { value: "member@example.com" } });
   fireEvent.click(screen.getByRole("button", { name: "링크 보내기" }));
-  expect(await screen.findByText("member@example.com", { selector: "b" })).toBeVisible();
+  const sentTo = await screen.findByText("member@example.com", { selector: "b" });
+  expect(sentTo).toBeVisible();
+  // 이메일 끝 글자에 따라 조사가 달라지지 않게 "메일함으로"를 붙인다(COPY-1과 같은 문제).
+  expect(sentTo.parentElement).toHaveTextContent("member@example.com 메일함으로 재설정 링크를 보냈습니다.");
   expect(mocks.resetPasswordForEmail).toHaveBeenCalledWith("member@example.com", {
     redirectTo: "https://finsight.example/auth/confirm?next=/reset-password",
   });

@@ -137,3 +137,35 @@ it("파일명 확인에 실패해도 원래 422 오류를 유지한다", async (
   show(); pick([file()]); fireEvent.click(screen.getByRole("button", { name: "분석 시작" }));
   expect(await screen.findByRole("alert")).toHaveTextContent(ERROR_MESSAGES.too_many_rows);
 });
+it("B1: 드롭존 바로 아래 접힌 안내로 명세서 파일 받는 순서를 알려 준다", () => {
+  show();
+  const details = screen.getByText("명세서 파일은 어디서 받나요?").closest("details")!;
+  expect(details).not.toHaveAttribute("open");
+  expect(Array.from(details.querySelectorAll("li"), (item) => item.textContent)).toEqual([
+    "카드사·은행 앱이나 홈페이지에 로그인합니다.",
+    "이용내역(거래내역) 조회 메뉴를 엽니다.",
+    "분석할 기간을 선택합니다.",
+    "엑셀 또는 CSV 파일로 저장합니다.",
+  ]);
+  const zone = screen.getByRole("button", { name: "파일을 끌어다 놓거나 클릭해서 선택" });
+  const siblings = Array.from(zone.parentElement!.children);
+  // 드롭존 다음은 숨겨진 file input, 그다음이 안내다.
+  expect(siblings.indexOf(details)).toBe(siblings.indexOf(zone) + 2);
+});
+it("B7: 한도에 도달한 Free에게 비활성 버튼 옆에 업그레이드 경로를 함께 보여 준다", () => {
+  show(false, 5);
+  expect(screen.getByRole("button", { name: "이번 달 분석 횟수를 모두 사용했습니다" })).toBeDisabled();
+  expect(screen.getByText(ERROR_MESSAGES.monthly_limit)).toBeVisible();
+  expect(screen.getByText("Pro는 매월 50회까지 분석할 수 있습니다.")).toBeVisible();
+  expect(screen.getByRole("link", { name: "Pro로 업그레이드" })).toHaveAttribute("href", "/api/checkout");
+});
+it("B7: 한도에 도달한 Pro에게는 초기화 안내만 보여 준다", () => {
+  show(true, 50);
+  expect(screen.getByText(ERROR_MESSAGES.monthly_limit)).toBeVisible();
+  expect(screen.queryByText(/Pro는 매월/)).not.toBeInTheDocument();
+  expect(screen.queryByRole("link", { name: "Pro로 업그레이드" })).not.toBeInTheDocument();
+});
+it("B7: 한도 전에는 업그레이드 경로를 보이지 않는다", () => {
+  show(false, 4);
+  expect(screen.queryByRole("link", { name: "Pro로 업그레이드" })).not.toBeInTheDocument();
+});

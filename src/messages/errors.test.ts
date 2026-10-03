@@ -30,7 +30,7 @@ describe("에러 코드와 한국어 문구", () => {
     expect(ERROR_MESSAGES.unsupported_currency).toBe("원화(KRW) 금액 열이 없는 외화 명세서는 분석할 수 없습니다. 원화 환산 금액이 포함된 명세서를 받아 주세요.");
     expect(ERROR_MESSAGES.duplicate_file).toBe("같은 내용의 파일을 이미 분석했습니다. 기존 분석은 대시보드에서 볼 수 있습니다.");
     expect(ERROR_MESSAGES.file_too_large).toBe("1MB를 넘는 파일입니다. 기간을 나눠 다시 내려받아 주세요.");
-    expect(ERROR_MESSAGES.too_many_rows).toBe("시트가 1,200행을 넘습니다.");
+    expect(ERROR_MESSAGES.too_many_rows).toBe("시트가 1,200행을 넘습니다. 기간을 나눠 다시 내려받아 주세요.");
   });
 
   it("월 한도는 다음 달 1일(UTC)의 초기화를 안내한다", () => {

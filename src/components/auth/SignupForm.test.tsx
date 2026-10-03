@@ -37,6 +37,18 @@ it("J1 두 필수 동의 전까지 이메일·Google 가입을 비활성화한�
   expect(google).toBeDisabled();
 });
 
+it("B4 동의 전에는 비활성 Google 버튼 바로 아래에 이유를 알리고, 동의하면 지운다", () => {
+  render(<SignupForm />);
+  const reason = "아래 필수 항목에 동의하면 사용할 수 있습니다.";
+  const google = screen.getByRole("button", { name: "Google로 계속하기" });
+  expect(screen.getByText(reason)).toBeVisible();
+  expect(google).toHaveAccessibleDescription(reason);
+  expect(google.nextElementSibling).toHaveTextContent(reason);
+  agree();
+  expect(screen.queryByText(reason)).not.toBeInTheDocument();
+  expect(google).not.toHaveAccessibleDescription(reason);
+});
+
 it("이용약관·처리방침 링크와 수탁사·국가를 명시한다", () => {
   render(<SignupForm />);
   expect(screen.getByRole("link", { name: "이용약관" })).toHaveAttribute("href", "/terms");

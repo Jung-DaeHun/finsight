@@ -60,7 +60,8 @@ export function SignupForm() {
   if (sent) return <AuthShell><VerifySent email={email.trim()} /></AuthShell>;
   return <AuthShell><form noValidate onSubmit={submit} className="flex flex-col gap-4" aria-busy={busy}>
     <h1 className="text-2xl font-medium leading-tight">회원가입</h1>
-    <GoogleButton disabled={!agreed || busy} onClick={google} />
+    <GoogleButton disabled={!agreed || busy} onClick={google} describedBy={agreed ? undefined : "google-consent-hint"} />
+    {!agreed && <p id="google-consent-hint" className="-mt-2 text-center text-sm font-medium text-mute">아래 필수 항목에 동의하면 사용할 수 있습니다.</p>}
     <EmailDivider />
     <Field id="signup-email" label="이메일" type="email" autoComplete="email" placeholder="name@example.com" value={email} disabled={busy} onChange={(event) => setEmail(event.target.value)} error={errors.email && AUTH_ERROR_MESSAGES[errors.email]} />
     <Field id="signup-password" label="비밀번호" type="password" autoComplete="new-password" value={password} disabled={busy} onChange={(event) => setPassword(event.target.value)} hint="8자 이상" error={errors.password && AUTH_ERROR_MESSAGES[errors.password]} />

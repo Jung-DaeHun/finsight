@@ -20,7 +20,7 @@ export function Analyzing({ filenames }: { filenames: string[] }) {
     <Spinner large label="명세서 분석 중" />
     <h2 className="text-2xl font-medium leading-tight">명세서를 분석하고 있습니다</h2>
     <p className="max-w-full break-all text-mute">{filenames.join(", ")}</p>
-    <ol aria-label="분석 단계" className="my-2 flex flex-col gap-3 text-left">{STEPS.map((step, index) => <li key={step} aria-current={index === current ? "step" : undefined} className={`flex items-center gap-3 ${index < current ? "text-charcoal" : index === current ? "font-medium text-ink" : "text-stone"}`}>
+    <ol aria-label="분석 단계" className="my-2 flex flex-col gap-3 text-left">{STEPS.map((step, index) => <li key={step} aria-current={index === current ? "step" : undefined} className={`flex items-center gap-3 ${index < current ? "text-charcoal" : index === current ? "font-medium text-ink" : "text-mute"}`}>
       <span className={`flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full ${index < current ? "border border-ink bg-ink text-on-primary" : index === current ? "border-2 border-ink" : "border border-hairline"}`}>{index < current && <Icon name="check" size={14} />}</span>{step}
     </li>)}</ol>
     <p className="text-sm font-medium text-mute">창을 닫지 마세요. 파일 3개 기준 최대 4분까지 걸릴 수 있습니다.</p>
