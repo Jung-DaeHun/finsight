@@ -115,6 +115,12 @@ describe("readRows", () => {
     expect(readRows(cp949(html(rows)))).toEqual({ rows, encoding: "cp949" });
   });
 
+  it("R6: HTML-xls의 공백 있는 닫는 태그(</td >)에서 옆 셀을 합치지 않는다", () => {
+    const text = "<table><tr><th>날짜</th ><th>가맹점</TH\n><th>금액</th></tr>" +
+      "<tr><td>2026-09-01</td><td>가게</td   ><td>12000</td></tr></table>";
+    expect(readRows(utf8(text)).rows).toEqual(exampleRows);
+  });
+
   it.each([[0xff, 0xff], [0x81], [0xc3, 0x28], [0xef, 0xbb, 0xbf, 0xff, 0xff]])(
     "R6: UTF-8과 CP949 모두 잘못된 바이트 %j는 거부한다", (...bytes) => {
       expect(() => readRows(Uint8Array.from(bytes).buffer)).toThrowError(new SheetError("unsupported_encoding"));

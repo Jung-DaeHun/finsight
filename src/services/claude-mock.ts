@@ -22,6 +22,7 @@ function dateFormat(value: string): string {
   if (/^\d{4}\/\d{1,2}\/\d{1,2}$/.test(value)) return "YYYY/MM/DD";
   if (/^\d{8}$/.test(value)) return "YYYYMMDD";
   if (/^\d{1,2}\/\d{1,2}$/.test(value)) return "MM/DD";
+  if (/^\d{4}년\s*\d{1,2}월\s*\d{1,2}일$/.test(value)) return "YYYY년 M월 D일";
   return "YYYY-MM-DD";
 }
 
