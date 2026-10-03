@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { runAnalysis } from "./analysis-pipeline";
-import { PipelineError } from "@/types/errors";
+import { DataError, PipelineError } from "@/types/errors";
 import { SheetError } from "@/lib/sheet/errors";
 import { ClaudeServiceError } from "./claude-errors";
 import { detect, summarize } from "@/lib/analysis";
@@ -116,10 +116,17 @@ describe("동기 분석 파이프라인", () => {
   });
   it("예외 원문·거래·가맹점·파일 ID는 로그와 오류에 포함하지 않는다", async () => {
     mocks.mapColumns.mockRejectedValue(new Error("민감한 파일 내용: 카페"));
-    await expect(runAnalysis("owner", "analysis", "free", [file("upload")])).rejects.toEqual(new PipelineError("mapping_failed", "upload"));
-    expect(mocks.logError).toHaveBeenCalledWith("analysis_failed", { code: "mapping_failed", analysisId: "analysis", durationMs: expect.any(Number) });
+    await expect(runAnalysis("owner", "analysis", "free", [file("upload")])).rejects.toEqual(new PipelineError("internal_error"));
+    expect(mocks.logError).toHaveBeenCalledWith("analysis_failed", { code: "internal_error", analysisId: "analysis", durationMs: expect.any(Number) });
     expect(mocks.logError).toHaveBeenCalledTimes(1);
   });
+  it.each(["setUploadMapping", "getCompletedHistory", "completeAnalysis"] as const)(
+    "%s의 DB 오류는 파일 문제가 아니므로 uploadId 없는 internal_error로 기록한다", async (name) => {
+      mocks[name].mockRejectedValue(new DataError("internal_error"));
+      await expect(runAnalysis("owner", "analysis", "free", [file("upload")])).rejects.toEqual(new PipelineError("internal_error"));
+      expect(mocks.failAnalysis).toHaveBeenCalledWith("owner", "analysis", { code: "internal_error" });
+    },
+  );
   it("실패 상태 기록까지 DB가 끊겨도 원문 없이 PipelineError를 반환한다", async () => {
     mocks.mapColumns.mockRejectedValue(new ClaudeServiceError("timeout"));
     mocks.failAnalysis.mockRejectedValue(new Error("민감한 DB 오류"));
