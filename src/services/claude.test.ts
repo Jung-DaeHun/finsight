@@ -1,9 +1,8 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import Anthropic from "@anthropic-ai/sdk";
-import { z } from "zod";
 import { modelFor, mapColumns, classifyMerchants, generateInsights } from "./claude";
-import { CLAUDE_MAX_RETRIES, CLAUDE_TIMEOUT_MS } from "./claude-config";
+import { CLAUDE_MAX_RETRIES, CLAUDE_MAX_TOKENS, CLAUDE_TIMEOUT_MS } from "./claude-config";
 import type { AnalysisSummary, ColumnMapping } from "@/types";
 
 const parse = vi.hoisted(() => vi.fn());
@@ -13,6 +12,7 @@ vi.mock("@anthropic-ai/sdk", async (importOriginal) => {
     APIConnectionTimeoutError: actual.APIConnectionTimeoutError,
     APIConnectionError: actual.APIConnectionError,
     APIError: actual.APIError,
+    AnthropicError: actual.AnthropicError,
   });
   return { ...actual, default: Client };
 });
@@ -22,6 +22,8 @@ const mapping: ColumnMapping = {
   dateColumn: "거래일", dateFormat: "YYYY.MM.DD", merchantColumn: "가맹점",
   amount: { mode: "single", column: "이용금액", debitIsNegative: false },
 };
+// messages.parse는 출력이 스키마에 맞지 않으면 ZodError 대신 AnthropicError(APIError 아님)를 던진다.
+const parseFailure = () => new Anthropic.AnthropicError("Failed to parse structured output");
 const summary: AnalysisSummary = {
   totalSpend: 100_000, byCategory: { food: 40_000 }, topMerchants: [{ merchant: "상점", amount: 30_000 }],
   period: { from: "2026-09-01", to: "2026-09-30" }, transactionCount: 8, skippedRows: 0,
@@ -45,13 +47,24 @@ describe("Claude 서비스", () => {
     expect(modelFor("pro")).toBe("pro-test");
   });
 
+  it("빈 모델 env는 기본 모델로 대체한다", () => {
+    vi.stubEnv("CLAUDE_MODEL_FREE", "");
+    vi.stubEnv("CLAUDE_MODEL_PRO", "  ");
+    expect(modelFor("free")).toBe("claude-sonnet-5-5");
+    expect(modelFor("pro")).toBe("claude-opus-5-5");
+  });
+
   it("매핑에 상위 15행과 행 번호만 보내고 SDK 제한을 적용한다", async () => {
     parse.mockResolvedValue({ stop_reason: "end_turn", parsed_output: mapping });
     const rows = [["거래일", "가맹점", "이용금액"], ...Array.from({ length: 20 }, (_, i) => [`2026.09.${i + 1}`, "상점", "1000"])];
     expect(await mapColumns(["9월 명세서"], rows, "free")).toEqual(mapping);
-    expect(Anthropic).toHaveBeenCalledWith({ timeout: CLAUDE_TIMEOUT_MS, maxRetries: CLAUDE_MAX_RETRIES, apiKey: "test-key" });
+    // SDK 디버그 로그가 요청 본문(가맹점명·파일 행)을 남기지 않도록 로그를 끈다.
+    expect(Anthropic).toHaveBeenCalledWith({
+      timeout: CLAUDE_TIMEOUT_MS, maxRetries: CLAUDE_MAX_RETRIES, apiKey: "test-key", logLevel: "off",
+    });
     const request = parse.mock.calls[0][0];
     expect(request.model).toBe("claude-sonnet-5-5");
+    expect(request.max_tokens).toBe(CLAUDE_MAX_TOKENS);
     expect(request.output_config).toMatchObject({ effort: "low", format: { type: "json_schema" } });
     expect(request.messages[0].content).toContain("0:");
     expect(request.messages[0].content).toContain("14:");
@@ -70,6 +83,11 @@ describe("Claude 서비스", () => {
     parse.mockResolvedValueOnce({ stop_reason: "refusal", parsed_output: mapping });
     await expect(mapColumns(["거래일", "가맹점", "금액"], [], "free")).rejects.toMatchObject({ code: "llm_unavailable" });
     parse.mockResolvedValueOnce({ stop_reason: "end_turn", parsed_output: null });
+    await expect(mapColumns(["거래일", "가맹점", "금액"], [], "free")).rejects.toMatchObject({ code: "mapping_failed" });
+  });
+
+  it("SDK가 매핑 응답을 스키마로 파싱하지 못하면 mapping_failed로 변환한다", async () => {
+    parse.mockRejectedValue(parseFailure());
     await expect(mapColumns(["거래일", "가맹점", "금액"], [], "free")).rejects.toMatchObject({ code: "mapping_failed" });
   });
 
@@ -108,7 +126,19 @@ describe("가맹점 분류", () => {
     pending[1]({ stop_reason: "end_turn", parsed_output: { items: [] } });
     pending[2]({ stop_reason: "end_turn", parsed_output: { items: [] } });
     expect(Object.keys(await task)).toHaveLength(205);
-    expect(parse.mock.calls.every(([request]) => request.output_config.effort === "low" && request.model === "claude-opus-5-5")).toBe(true);
+    expect(parse.mock.calls.every(([request]) => request.output_config.effort === "low" && request.model === "claude-opus-5-5"
+      && request.max_tokens === CLAUDE_MAX_TOKENS)).toBe(true);
+  });
+
+  it("한 배치가 실패하면 남은 배치를 호출하지 않는다", async () => {
+    const pending: Array<(value: unknown) => void> = [];
+    parse.mockRejectedValueOnce(new Anthropic.APIConnectionError({ message: "down" }))
+      .mockImplementation(() => new Promise((resolve) => pending.push(resolve)));
+    const merchants = Array.from({ length: 205 }, (_, i) => `상점${i}`);
+    await expect(classifyMerchants(merchants, "free")).rejects.toMatchObject({ code: "llm_unavailable" });
+    pending[0]({ stop_reason: "end_turn", parsed_output: { items: [] } });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(parse).toHaveBeenCalledTimes(2);
   });
 
   it("누락·알 수 없는 가맹점과 enum 밖 카테고리를 other로 둔다", async () => {
@@ -121,9 +151,7 @@ describe("가맹점 분류", () => {
   });
 
   it("SDK가 enum 위반 응답을 파싱 단계에서 거부해도 해당 배치는 other로 둔다", async () => {
-    let invalidEnum: unknown;
-    try { z.enum(["food"]).parse("wrong"); } catch (error) { invalidEnum = error; }
-    parse.mockRejectedValue(invalidEnum);
+    parse.mockRejectedValue(parseFailure());
     expect(await classifyMerchants(["가맹점"], "free")).toEqual({ 가맹점: "other" });
   });
 });
@@ -137,6 +165,7 @@ it("인사이트에는 집계값만 보내며 Pro 모델과 medium effort를 쓴
   expect(await generateInsights({ summary, detections: { recurringCount: 1, anomalyCount: 2 } })).toHaveLength(3);
   const request = parse.mock.calls[0][0];
   expect(request.model).toBe("claude-opus-5-5");
+  expect(request.max_tokens).toBe(CLAUDE_MAX_TOKENS);
   expect(request.output_config.effort).toBe("medium");
   expect(request.messages[0].content).toContain("100000");
   expect(request.messages[0].content).not.toContain("상점");

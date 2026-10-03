@@ -5,7 +5,7 @@ import { z } from "zod";
 import { CATEGORIES } from "@/types";
 import type { AnalysisSummary, Category, ColumnMapping, Insight, MonthlyTrend, Plan } from "@/types";
 import { isMocked } from "@/lib/mock";
-import { CLASSIFY_BATCH_SIZE, CLASSIFY_CONCURRENCY, CLAUDE_MAX_RETRIES, CLAUDE_TIMEOUT_MS } from "./claude-config";
+import { CLASSIFY_BATCH_SIZE, CLASSIFY_CONCURRENCY, CLAUDE_MAX_RETRIES, CLAUDE_MAX_TOKENS, CLAUDE_TIMEOUT_MS } from "./claude-config";
 import { ClaudeServiceError, type ClaudeErrorCode } from "./claude-errors";
 import * as mock from "./claude-mock";
 
@@ -33,24 +33,25 @@ type InsightInput = {
 
 export function modelFor(plan: Plan): string {
   return plan === "free"
-    ? process.env.CLAUDE_MODEL_FREE ?? "claude-sonnet-5-5"
-    : process.env.CLAUDE_MODEL_PRO ?? "claude-opus-5-5";
+    ? process.env.CLAUDE_MODEL_FREE?.trim() || "claude-sonnet-5-5"
+    : process.env.CLAUDE_MODEL_PRO?.trim() || "claude-opus-5-5";
 }
 
 function client(): Anthropic {
   const apiKey = process.env.ANTHROPIC_API_KEY?.trim();
   if (!apiKey) throw new ClaudeServiceError("llm_unavailable");
-  return new Anthropic({ apiKey, timeout: CLAUDE_TIMEOUT_MS, maxRetries: CLAUDE_MAX_RETRIES });
+  // ANTHROPIC_LOG=debug여도 요청 본문(가맹점명·파일 행)이 로그에 남지 않게 한다.
+  return new Anthropic({ apiKey, timeout: CLAUDE_TIMEOUT_MS, maxRetries: CLAUDE_MAX_RETRIES, logLevel: "off" });
 }
 
 async function structuredOutput<T extends z.ZodType>(
   schema: T, model: string, system: string, content: string,
-  effort: "low" | "medium", maxTokens: number, invalidCode: ClaudeErrorCode,
-  passThroughZodError = false,
+  effort: "low" | "medium", invalidCode: ClaudeErrorCode,
+  passThroughParseError = false,
 ): Promise<unknown> {
   try {
     const response = await client().messages.parse({
-      model, max_tokens: maxTokens, system, messages: [{ role: "user", content }],
+      model, max_tokens: CLAUDE_MAX_TOKENS, system, messages: [{ role: "user", content }],
       output_config: { format: zodOutputFormat(schema), effort },
     });
     if (response.stop_reason === "refusal" || response.stop_reason === "max_tokens") {
@@ -66,8 +67,9 @@ async function structuredOutput<T extends z.ZodType>(
     if (error instanceof Anthropic.APIError || error instanceof Anthropic.APIConnectionError) {
       throw new ClaudeServiceError("llm_unavailable");
     }
-    if (error instanceof z.ZodError) {
-      if (passThroughZodError) throw error;
+    // messages.parse는 출력이 스키마에 맞지 않으면 ZodError 대신 AnthropicError(APIError 아님)를 던진다.
+    if (error instanceof Anthropic.AnthropicError) {
+      if (passThroughParseError) throw error;
       throw new ClaudeServiceError(invalidCode);
     }
     throw new ClaudeServiceError("llm_unavailable");
@@ -101,7 +103,7 @@ export async function mapColumns(header: string[], sampleRows: string[][], plan:
   const rows = [header, ...sampleRows].slice(0, 15);
   const system = "한국 카드·은행 명세서의 날짜·가맹점·설명·금액 열을 매핑하세요. headerRowIndex는 제공된 0부터 시작하는 실제 행 번호입니다. 금액은 반드시 원화(KRW) 열을 고르세요. 해외 결제는 원화 환산 열, 할부는 이번 달 청구액 열을 고르세요. 원화 금액 열이 없으면 isKrw=false, 거래내역이 아니면 isTransactions=false로 답하세요. 해당하지 않는 문자열 필드는 빈 문자열로 채우세요. 날짜 형식은 예시 값에 맞춰 YYYY-MM-DD, YYYY.MM.DD, YYYY/MM/DD, YYYYMMDD, YYYY-M-D, YYYY년 M월 D일, MM/DD/YYYY, DD/MM/YYYY, MM/DD 중에서 고르세요. 연도가 없는 MM/DD에는 제목의 연도나 합리적인 assumedYear를 넣으세요. 합계나 수치 계산은 하지 마세요.";
   const content = `상위 행(원래 행 번호 포함):\n${rows.map((row, index) => `${index}: ${JSON.stringify(row)}`).join("\n")}`;
-  return validateMapping(await structuredOutput(MappingSchema, modelFor(plan), system, content, "low", 2048, "mapping_failed"), rows);
+  return validateMapping(await structuredOutput(MappingSchema, modelFor(plan), system, content, "low", "mapping_failed"), rows);
 }
 
 async function classifyBatch(merchants: string[], plan: Plan): Promise<Record<string, Category>> {
@@ -110,11 +112,11 @@ async function classifyBatch(merchants: string[], plan: Plan): Promise<Record<st
     value = await structuredOutput(
       ClassificationsSchema, modelFor(plan),
       "한국어 가맹점명을 지정된 카테고리 enum 중 하나로 분류하세요. 제공되지 않은 가맹점은 추가하지 마세요. 숫자 계산을 하지 마세요.",
-      JSON.stringify({ merchants }), "low", 4096, "llm_unavailable", true,
+      JSON.stringify({ merchants }), "low", "llm_unavailable", true,
     );
   } catch (error) {
     // SDK가 enum 위반 응답을 파싱 단계에서 거부한 경우 이 배치만 other로 둔다.
-    if (error instanceof z.ZodError) {
+    if (error instanceof Anthropic.AnthropicError) {
       return Object.fromEntries(merchants.map((merchant) => [merchant, "other" as Category]));
     }
     throw error;
@@ -138,11 +140,18 @@ export async function classifyMerchants(merchants: string[], plan: Plan): Promis
   const batches: string[][] = [];
   for (let i = 0; i < unique.length; i += CLASSIFY_BATCH_SIZE) batches.push(unique.slice(i, i + CLASSIFY_BATCH_SIZE));
   let nextBatch = 0;
+  let failed = false;
   const workers = Array.from({ length: Math.min(CLASSIFY_CONCURRENCY, batches.length) }, async () => {
     const outputs: Record<string, Category>[] = [];
-    while (nextBatch < batches.length) {
+    while (!failed && nextBatch < batches.length) {
       const batch = batches[nextBatch++];
-      outputs.push(await classifyBatch(batch, plan));
+      try {
+        outputs.push(await classifyBatch(batch, plan));
+      } catch (error) {
+        // 한 배치가 실패하면 분석 전체가 실패하므로 남은 배치는 호출하지 않는다.
+        failed = true;
+        throw error;
+      }
     }
     return outputs;
   });
@@ -161,7 +170,7 @@ export async function generateInsights(input: InsightInput): Promise<Insight[]> 
   const value = await structuredOutput(
     InsightsSchema, modelFor("pro"),
     "주어진 집계값만 바탕으로 한국어 절약 인사이트 3~5개를 작성하세요. 합계·추이·탐지 건수를 새로 계산하지 마세요. monthlySaving은 0원 이상의 정수 제안 금액이며 실제 집계값으로 표현하지 마세요.",
-    JSON.stringify(aggregate), "medium", 1536, "llm_unavailable",
+    JSON.stringify(aggregate), "medium", "llm_unavailable",
   );
   const parsed = InsightsSchema.safeParse(value);
   if (!parsed.success) throw new ClaudeServiceError("llm_unavailable");
