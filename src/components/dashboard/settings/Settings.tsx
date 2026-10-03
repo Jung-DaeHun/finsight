@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { PageTitle } from "@/components/ui/PageTitle";
 import { SectionHead } from "@/components/ui/SectionHead";
-import { formatFullDate } from "@/lib/format";
+import { formatKstDate } from "@/lib/format";
 import { limits } from "@/lib/plan";
 import type { AnalysisListItem, Plan } from "@/types";
 import { AnalysisHistory } from "./AnalysisHistory";
@@ -20,7 +20,7 @@ export function Settings({ subscription, used, items, email }: {
   const [withdrawal, setWithdrawal] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const pro = subscription.plan === "pro";
-  const end = subscription.currentPeriodEnd ? formatFullDate(subscription.currentPeriodEnd) : null;
+  const end = subscription.currentPeriodEnd ? formatKstDate(subscription.currentPeriodEnd) : null;
 
   return <>
     <PageTitle title="설정" />

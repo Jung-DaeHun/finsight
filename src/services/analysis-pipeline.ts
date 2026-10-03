@@ -52,8 +52,10 @@ export async function runAnalysis(
       throw new PipelineError("timeout");
     }
   } catch (error) {
-    const code = error instanceof PipelineError || error instanceof SheetError || error instanceof ClaudeServiceError
-      ? error.code : "mapping_failed";
+    // 분류된 오류만 파일 탓으로 기록하고, DB 오류 등 나머지는 uploadId 없는 internal_error로 둔다.
+    const known = error instanceof PipelineError || error instanceof SheetError || error instanceof ClaudeServiceError;
+    const code = known ? error.code : "internal_error";
+    if (!known) uploadId = undefined;
     const failure = { code, ...(uploadId === undefined ? {} : { uploadId }) };
     try {
       await failAnalysis(userId, analysisId, failure);

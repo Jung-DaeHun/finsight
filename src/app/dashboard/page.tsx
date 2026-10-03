@@ -4,7 +4,7 @@ import { Dashboard } from "@/components/dashboard/Dashboard";
 import { CheckoutStatus } from "@/components/dashboard/CheckoutStatus";
 import { getUserId } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { countMonthlyUsage, getUserPlan, listAnalyses, recoverStaleAnalyses } from "@/lib/data";
+import { countMonthlyUsage, getUserPlan, listAnalyses } from "@/lib/data";
 import { limits } from "@/lib/plan";
 
 export default async function DashboardPage({ searchParams }: {
@@ -12,7 +12,7 @@ export default async function DashboardPage({ searchParams }: {
 } = {}) {
   const userId = await getUserId();
   if (!userId) redirect("/login");
-  await recoverStaleAnalyses(userId);
+  // 정체 분석 복구는 listAnalyses가 목록 조회 전에 수행한다.
   const [plan, used, items] = await Promise.all([
     getUserPlan(userId), countMonthlyUsage(userId), listAnalyses(userId),
   ]);

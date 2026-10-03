@@ -153,6 +153,12 @@ describe("R2/R5: 완료 RPC의 원자성·소유권·사용량", () => {
     expect(missing.error).toBeNull();
     expect(missing.data).toBe(false);
   });
+  it("파일과 무관한 실패는 uploadId 없이 internal_error로 기록한다", async () => {
+    const userId = users[0].id;
+    const id = await start(userId);
+    const failed = await admin.from("analyses").update({ status: "failed", error_code: "internal_error" }).eq("id", id).eq("user_id", userId);
+    expect(failed.error).toBeNull();
+  });
   it("두 번째 거래가 check 위반이면 상태·앞 거래·원장까지 전체 rollback한다", async () => {
     const userId = users[0].id;
     const id = await start(userId);

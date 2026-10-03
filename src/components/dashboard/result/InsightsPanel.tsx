@@ -51,13 +51,18 @@ function InsightContent({ view }: { view: AnalysisView }) {
     }
   }
 
-  if (insights !== null && insights !== undefined) return <>
+  if (insights !== null && insights !== undefined) {
+    // AI가 제안한 금액의 합계가 실제 총지출을 넘지 않게 한다.
+    const saving = insights.reduce((sum, item) => sum + item.monthlySaving, 0);
+    const shownSaving = view.summary ? Math.min(saving, view.summary.totalSpend) : saving;
+    return <>
     <p className="text-sm font-medium text-mute">예상 절약 가능액</p>
-    <p className="mb-2 font-display text-[32px] leading-none tracking-[0.01em]">월 {formatWon(insights.reduce((sum, item) => sum + item.monthlySaving, 0))}</p>
+    <p className="mb-2 font-display text-[32px] leading-none tracking-[0.01em]">월 {formatWon(shownSaving)}</p>
     <ol>{insights.map((item, i) => <li key={i} className="flex gap-3 border-b border-hairline-soft py-3 text-sm font-medium">
       <span className="w-5 shrink-0 text-mute">{i + 1}</span><div className="min-w-0 break-words"><h3 className="font-bold">{item.title}</h3><p className="mt-0.5 text-mute">{item.body}</p></div>
     </li>)}</ol>
-  </>;
+    </>;
+  }
   return <div className="bg-soft-cloud p-8 text-center" aria-live="polite" aria-busy={loading}>
     {loading ? <><Spinner label="인사이트 생성 중" /><p className="mt-3 text-sm text-mute">거래 {view.summary?.transactionCount ?? 0}건을 살펴보는 중…</p></>
       : <>{error ? <p role="alert" className="mb-3 text-sm text-sale">{error}</p> : <p className="mb-3 text-sm text-mute">이번 분석 결과로 절약 포인트를 만들어 드립니다.</p>}

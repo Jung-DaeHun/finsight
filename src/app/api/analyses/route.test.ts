@@ -73,6 +73,11 @@ describe("POST /api/analyses", () => {
     expect(mocks.startAnalysis).not.toHaveBeenCalled();
     expect(mocks.createUpload).not.toHaveBeenCalled();
   });
+  it("409: 한 요청에 같은 내용의 파일이 여러 개면 이중 집계하지 않도록 거부한다", async () => {
+    mocks.getUserPlan.mockResolvedValue("pro");
+    await expectError(await POST(request([new File(["same"], "a.csv"), new File(["same"], "b.csv")])), 409, "duplicate_file");
+    expect(mocks.startAnalysis).not.toHaveBeenCalled();
+  });
   it.each([["monthly_limit", 429], ["analysis_in_progress", 409]] as const)("시작 거부 %s (%i)는 Storage에 저장하지 않는다", async (code, status) => {
     mocks.startAnalysis.mockRejectedValue(new DataError(code));
     await expectError(await POST(request()), status, code);
@@ -112,6 +117,10 @@ describe("POST /api/analyses", () => {
     await expectError(await POST(request()), 422, code, { analysisId: "analysis", uploadId: "failed-upload" });
     expect(mocks.failAnalysis).not.toHaveBeenCalled();
   });
+  it("500: 파이프라인의 internal_error는 파일 오류(422)가 아니라 서버 오류로 반환한다", async () => {
+    mocks.runAnalysis.mockRejectedValue(new PipelineError("internal_error"));
+    await expectError(await POST(request()), 500, "internal_error", { analysisId: "analysis" });
+  });
   it("504: timeout은 이미 생성된 analysisId를 반환한다", async () => {
     mocks.runAnalysis.mockRejectedValue(new PipelineError("timeout"));
     await expectError(await POST(request()), 504, "timeout", { analysisId: "analysis" });
@@ -136,7 +145,7 @@ describe("POST /api/analyses", () => {
     await expectError(await POST(request()), 500, "internal_error", { analysisId: "analysis" });
     expect(mocks.uploadOriginal).not.toHaveBeenCalled();
     expect(mocks.runAnalysis).not.toHaveBeenCalled();
-    expect(mocks.failAnalysis).toHaveBeenCalledWith("owner", "analysis", { code: "storage_upload_failed" });
+    expect(mocks.failAnalysis).toHaveBeenCalledWith("owner", "analysis", { code: "internal_error" });
   });
   it("실패 기록까지 DB 오류여도 정해진 Storage 코드와 기록 경로 정보를 유지한다", async () => {
     mocks.uploadOriginal.mockRejectedValue(new Error("비공개 원문"));

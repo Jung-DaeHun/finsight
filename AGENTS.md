@@ -8,7 +8,7 @@
 
 ## 기술 스택
 - Next.js 16 (App Router, `proxy.ts`), TypeScript strict mode
-- Tailwind CSS, Recharts
+- Tailwind CSS (차트는 div 막대로 그린다. 차트 라이브러리 없음)
 - Supabase (`@supabase/ssr`, publishable/secret 키, Auth·Postgres·Storage)
 - Claude API (`@anthropic-ai/sdk`). 플랜별 모델: Free `CLAUDE_MODEL_FREE`(기본 `claude-sonnet-5-5`), Pro `CLAUDE_MODEL_PRO`(기본 `claude-opus-5-5`)
 - Polar (`@polar-sh/nextjs`, 구독 결제)

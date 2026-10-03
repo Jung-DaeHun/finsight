@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatBytes, formatFullDate, formatManWon, formatMonthTitle, formatShortDate, formatWon, periodDayCount } from "./format";
+import { formatBytes, formatFullDate, formatKstDate, formatManWon, formatMonthTitle, formatShortDate, formatWon, periodDayCount } from "./format";
 
 describe("표시 형식", () => {
   it("원화와 음수를 표시한다", () => {
@@ -9,6 +9,11 @@ describe("표시 형식", () => {
   it("만원 단위로 반올림한다", () => {
     expect(formatManWon(14999)).toBe("1만");
     expect(formatManWon(15000)).toBe("2만");
+  });
+  it("생성·만료 시각(timestamptz)은 한국 날짜로 표시한다", () => {
+    expect(formatKstDate("2026-10-02T14:59:59.999999+00:00")).toBe("2026.10.02");
+    expect(formatKstDate("2026-10-02T15:00:00.123456+00:00")).toBe("2026.10.03");
+    expect(formatKstDate("2026-12-31T15:00:00.000Z")).toBe("2027.01.01");
   });
   it("날짜 문자열을 시간대 변환 없이 표시한다", () => {
     expect(formatShortDate("2026-09-14")).toBe("09.14");

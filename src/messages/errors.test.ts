@@ -7,7 +7,7 @@ describe("에러 코드와 한국어 문구", () => {
     expect(ANALYSIS_ERROR_CODES).toEqual([
       "not_transactions", "mapping_failed", "too_many_invalid_rows", "file_unreadable",
       "file_encrypted", "llm_unavailable", "timeout", "too_many_rows", "unsupported_encoding",
-      "unsupported_currency", "storage_upload_failed",
+      "unsupported_currency", "storage_upload_failed", "internal_error",
     ]);
     expect(API_ERROR_CODES).toEqual([
       "unauthorized", "not_found", "file_too_large", "too_many_files", "monthly_limit",
@@ -17,7 +17,8 @@ describe("에러 코드와 한국어 문구", () => {
   });
 
   it("모든 에러 코드에 비어 있지 않은 한국어 문구가 있다", () => {
-    const codes = [...ANALYSIS_ERROR_CODES, ...API_ERROR_CODES];
+    // internal_error는 분석 실패 코드이자 API 코드다.
+    const codes = [...new Set([...ANALYSIS_ERROR_CODES, ...API_ERROR_CODES])];
     expect(Object.keys(ERROR_MESSAGES).sort()).toEqual([...codes].sort());
     for (const code of codes) {
       expect(ERROR_MESSAGES[code].trim()).toMatch(/[가-힣]/);

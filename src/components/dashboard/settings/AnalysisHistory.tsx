@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { IconButton } from "@/components/ui/IconButton";
 import { SectionHead } from "@/components/ui/SectionHead";
 import { Toast } from "@/components/ui/Toast";
-import { formatFullDate, formatMonthTitle } from "@/lib/format";
+import { formatKstDate, formatMonthTitle } from "@/lib/format";
 import { ERROR_MESSAGES } from "@/messages/errors";
 import type { AnalysisListItem } from "@/types";
 import { API_ERROR_CODES } from "@/types/errors";
@@ -59,7 +59,7 @@ export function AnalysisHistory({ items, disabled, onPendingChange }: {
       return <li key={item.id} className="flex flex-wrap items-center gap-3 border-b border-hairline-soft py-2.5 text-sm font-medium">
         <div className="min-w-0 flex-1">
           <p>{title}</p>
-          <p className="break-all text-mute">{[...item.filenames, formatFullDate(item.createdAt)].join(" · ")}</p>
+          <p className="break-all text-mute">{[...item.filenames, formatKstDate(item.createdAt)].join(" · ")}</p>
           {confirm === item.id && error && <p role="alert" className="mt-2 text-xs text-sale">{error}</p>}
         </div>
         {confirm === item.id ? <div className="flex items-center gap-3">

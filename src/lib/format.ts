@@ -14,6 +14,11 @@ export function formatFullDate(date: string): string {
   return `${date.slice(0, 4)}.${date.slice(5, 7)}.${date.slice(8, 10)}`;
 }
 
+/** 분석 생성·구독 만료 시각(timestamptz)을 한국 날짜로 표시한다. 거래일에는 쓰지 않는다. KST는 서머타임 없는 UTC+9다. */
+export function formatKstDate(timestamp: string): string {
+  return formatFullDate(new Date(Date.parse(timestamp) + 9 * 3_600_000).toISOString());
+}
+
 export function formatMonthTitle(date: string): string {
   return `${date.slice(0, 4)}년 ${Number(date.slice(5, 7))}월`;
 }

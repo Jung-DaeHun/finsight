@@ -5,9 +5,10 @@ import { AccountDeletionError, DataError, StorageDeleteError } from "@/types/err
 
 const mocks = vi.hoisted(() => ({
   getAnalysisStatus: vi.fn(), recoverStaleAnalyses: vi.fn(), deleteAnalysisRecord: vi.fn(),
-  storageFrom: vi.fn(), list: vi.fn(), remove: vi.fn(), deleteUser: vi.fn(), cancelSubscriptions: vi.fn(),
+  storageFrom: vi.fn(), list: vi.fn(), remove: vi.fn(), deleteUser: vi.fn(), cancelSubscriptions: vi.fn(), logError: vi.fn(),
 }));
 vi.mock("@/lib/data", () => mocks);
+vi.mock("@/lib/log", () => ({ logError: mocks.logError }));
 vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: () => ({ storage: { from: mocks.storageFrom }, auth: { admin: { deleteUser: mocks.deleteUser } } }) }));
 vi.mock("@/services/polar", () => ({ cancelSubscriptions: mocks.cancelSubscriptions }));
 const file = (name: string) => ({ name, id: name, metadata: { size: 1 } });
@@ -31,7 +32,8 @@ describe("J7·R1: Polar → Storage → auth 순서의 회원 탈퇴", () => {
     expect(mocks.getAnalysisStatus).not.toHaveBeenCalled();
     expect(mocks.deleteAnalysisRecord).not.toHaveBeenCalled();
     expect(mocks.list).toHaveBeenCalledWith("owner", { limit: 100, offset: 0, sortBy: { column: "name", order: "asc" } });
-    expect(mocks.list).toHaveBeenCalledTimes(2);
+    // auth 삭제 전 정리·확인 2회 + auth 삭제 후 재정리·확인 2회
+    expect(mocks.list).toHaveBeenCalledTimes(4);
     expect(mocks.remove).not.toHaveBeenCalled();
     expect(mocks.deleteUser).toHaveBeenCalledWith("owner");
     expect(mocks.cancelSubscriptions.mock.invocationCallOrder[0]).toBeLessThan(mocks.storageFrom.mock.invocationCallOrder[0]);
@@ -49,7 +51,8 @@ describe("J7·R1: Polar → Storage → auth 순서의 회원 탈퇴", () => {
       .mockResolvedValueOnce(ok(first)).mockResolvedValueOnce(ok([file("last")]))
       .mockResolvedValueOnce(ok([file("second")])).mockResolvedValueOnce(ok());
     await deleteAccount("owner");
-    expect(mocks.list.mock.calls.map(([prefix, options]) => [prefix, options.offset])).toEqual([
+    // auth 삭제 전 정리 단계의 조회만 본다(이후 재정리 조회는 별도 테스트).
+    expect(mocks.list.mock.calls.slice(0, 5).map(([prefix, options]) => [prefix, options.offset])).toEqual([
       ["owner", 0], ["owner/analysis-a", 0], ["owner/analysis-a", 100], ["owner/analysis-b", 0], ["owner", 0],
     ]);
     expect(mocks.list.mock.invocationCallOrder[3]).toBeLessThan(mocks.remove.mock.invocationCallOrder[0]);
@@ -83,6 +86,18 @@ describe("J7·R1: Polar → Storage → auth 순서의 회원 탈퇴", () => {
     if (failure === "response") mocks.deleteUser.mockResolvedValue({ error: { message: "비공개 DB 응답" } });
     else mocks.deleteUser.mockRejectedValue(new Error("비공개 DB 응답"));
     await expect(deleteAccount("owner")).rejects.toEqual(new AccountDeletionError("account_delete_failed"));
+  });
+  it("Storage 정리 뒤 끼어든 업로드 원본도 auth 삭제 후 다시 지운다", async () => {
+    mocks.list.mockResolvedValueOnce(ok()).mockResolvedValueOnce(ok())
+      .mockResolvedValueOnce(ok([file("late-upload")])).mockResolvedValueOnce(ok());
+    await expect(deleteAccount("owner")).resolves.toBeUndefined();
+    expect(mocks.remove).toHaveBeenCalledWith(["owner/late-upload"]);
+    expect(mocks.deleteUser.mock.invocationCallOrder[0]).toBeLessThan(mocks.remove.mock.invocationCallOrder[0]);
+  });
+  it("auth 삭제 후 재정리가 실패해도 탈퇴는 완료하고 코드만 기록한다", async () => {
+    mocks.list.mockResolvedValueOnce(ok()).mockResolvedValueOnce(ok()).mockRejectedValueOnce(new Error("비공개 Storage 응답"));
+    await expect(deleteAccount("owner")).resolves.toBeUndefined();
+    expect(mocks.logError).toHaveBeenCalledWith("account_storage_cleanup_failed", { code: "storage_delete_failed" });
   });
   it("구독·원본이 이미 정리된 상태에서 auth 삭제를 재시도할 수 있다", async () => {
     mocks.list.mockResolvedValueOnce(ok([file("original")])).mockResolvedValueOnce(ok());

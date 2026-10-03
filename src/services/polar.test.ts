@@ -1,9 +1,9 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cancelSubscriptions, createCheckout, createPortalUrl } from "./polar";
+import { cancelSubscriptions, createCheckout, createPortalUrl, getSubscription } from "./polar";
 import { PolarServiceError } from "@/types/errors";
 
-const mocks = vi.hoisted(() => ({ Polar: vi.fn(), checkout: vi.fn(), portal: vi.fn(), list: vi.fn(), revoke: vi.fn(), upsertSubscription: vi.fn() }));
+const mocks = vi.hoisted(() => ({ Polar: vi.fn(), checkout: vi.fn(), portal: vi.fn(), list: vi.fn(), revoke: vi.fn(), get: vi.fn(), upsertSubscription: vi.fn() }));
 vi.mock("@polar-sh/sdk", () => ({ Polar: mocks.Polar }));
 vi.mock("@/lib/data", () => ({ upsertSubscription: mocks.upsertSubscription }));
 function pages(...items: { id: string; status: string; endedAt?: Date | null }[][]) {
@@ -16,7 +16,7 @@ beforeEach(() => {
   vi.stubEnv("POLAR_SERVER", "sandbox");
   vi.stubEnv("POLAR_PRO_PRODUCT_ID", "pro-product");
   vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://finsight.example");
-  mocks.Polar.mockImplementation(function () { return { checkouts: { create: mocks.checkout }, customerSessions: { create: mocks.portal }, subscriptions: { list: mocks.list, revoke: mocks.revoke } }; });
+  mocks.Polar.mockImplementation(function () { return { checkouts: { create: mocks.checkout }, customerSessions: { create: mocks.portal }, subscriptions: { list: mocks.list, revoke: mocks.revoke, get: mocks.get } }; });
 });
 afterEach(() => vi.unstubAllEnvs());
 describe("명시적 Polar mock", () => {
@@ -40,6 +40,20 @@ describe("명시적 Polar mock", () => {
   });
 });
 describe("실제 Polar SDK 계약", () => {
+  it("웹훅용 현재 구독 상태를 ID로 조회해 저장할 필드만 돌려준다", async () => {
+    mocks.get.mockResolvedValue({
+      id: "polar-sub", customerId: "polar-customer", status: "canceled", cancelAtPeriodEnd: false,
+      currentPeriodEnd: new Date("2026-10-29T00:00:00Z"), customer: { email: "member@example.com" },
+    });
+    expect(await getSubscription("polar-sub")).toEqual({
+      customerId: "polar-customer", status: "canceled", cancelAtPeriodEnd: false, currentPeriodEnd: "2026-10-29T00:00:00.000Z",
+    });
+    expect(mocks.get).toHaveBeenCalledWith({ id: "polar-sub" });
+  });
+  it("현재 구독 조회 실패는 원문 없이 PolarServiceError로 바꾼다", async () => {
+    mocks.get.mockRejectedValue(new Error("Polar 원문"));
+    await expect(getSubscription("polar-sub")).rejects.toEqual(new PolarServiceError());
+  });
   it("서버에서 상품·검증된 사용자·성공 URL을 지정한다", async () => {
     mocks.checkout.mockResolvedValue({ url: "https://polar.example/checkout" });
     expect(await createCheckout("owner", "member@example.com")).toBe("https://polar.example/checkout");
