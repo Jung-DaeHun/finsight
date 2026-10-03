@@ -82,6 +82,8 @@ export function readRows(bytes: ArrayBuffer): ReadRowsResult {
       sheetRows: MAX_READ_ROWS,
       raw: typeof input === "string",
       sheets: 0,
+      // 엑셀 기본 날짜 서식(m/d/yy)은 연도가 두 자리라 매핑할 수 없으므로 YYYY-MM-DD로 표시한다.
+      dateNF: "yyyy-mm-dd",
     });
     const firstName = workbook.SheetNames[0];
     const sheet = firstName === undefined ? undefined : workbook.Sheets[firstName];

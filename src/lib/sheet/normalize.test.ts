@@ -27,15 +27,16 @@ describe("normalize", () => {
     expect(JSON.stringify(rows)).toBe(before);
   });
 
-  it.each(["CSV", "xlsx"])("R3 · E4/E5: %s 제목·빈 행·반복 헤더·합계가 섞여도 총액이 일치한다", (format) => {
+  it.each(["CSV", "xlsx", "xls", "HTML-xls"])("R3 · E4/E5: %s 제목·빈 행·반복 헤더·합계가 섞여도 총액이 일치한다", (format) => {
     const rows = [["9월 거래내역"], ["조회 기간"], header, valid, [], header,
       ["2026-09-02", "가게", "(2000)", "환불"], ["", "합계", "10000", ""],
       ["", "", "10000", "소계"], ["", "TOTAL", "10000", ""]];
     const book = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(book, XLSX.utils.aoa_to_sheet(rows), "내역");
-    const bytes = format === "CSV"
-      ? new TextEncoder().encode(rows.map((row) => row.join(",")).join("\n")).buffer
-      : XLSX.write(book, { type: "array", bookType: "xlsx" });
+    const text = (value: string) => new TextEncoder().encode(value).buffer;
+    const bytes = format === "CSV" ? text(rows.map((row) => row.join(",")).join("\n"))
+      : format === "HTML-xls" ? text(`<table>${rows.map((row) => `<tr>${row.map((cell) => `<td>${cell}</td>`).join("")}</tr>`).join("")}</table>`)
+      : XLSX.write(book, { type: "array", bookType: format === "xls" ? "biff8" : "xlsx" });
     const result = normalize(readRows(bytes).rows, { ...mapping, headerRowIndex: 2 });
     expect(result.skipped).toBe(0);
     expect(result.txs).toHaveLength(2);
