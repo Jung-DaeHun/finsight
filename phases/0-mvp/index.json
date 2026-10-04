@@ -128,7 +128,7 @@
       "status": "completed",
       "started_at": "2026-10-04T18:11:16+0900",
       "summary": "운영 DB 마이그레이션·실제 Claude/Polar 샌드박스 전환·MOCK_SERVICES 삭제; Free/Pro 최대 입력 예상 39.816초/181.814초, timeout 60초·100개 배치·동시 3개 확정; lint·build·754개 단위/컴포넌트·23개 개발 DB 통합 테스트·배포·HTTP 200·데모 문구 0건 검증; 수동 확인 문서 phases/0-mvp/go-live-checklist.md",
-      "completed_at": "2026-10-04T18:23:16+0900"
+      "completed_at": "2026-10-04T18:24:38+0900"
     }
   ],
   "created_at": "2026-10-01T21:03:45+0900"
