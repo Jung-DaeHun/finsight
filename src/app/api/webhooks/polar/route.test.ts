@@ -4,8 +4,9 @@ import { NextRequest } from "next/server";
 import { Webhooks } from "@polar-sh/nextjs";
 import { resolvePlan } from "@/lib/plan";
 import { POST } from "./route";
-const mocks = vi.hoisted(() => ({ userExists: vi.fn(), upsertSubscription: vi.fn(), logError: vi.fn(), type: "subscription.active", externalId: "owner" as string | null }));
+const mocks = vi.hoisted(() => ({ userExists: vi.fn(), upsertSubscription: vi.fn(), getSubscription: vi.fn(), logError: vi.fn(), type: "subscription.active", externalId: "owner" as string | null }));
 vi.mock("@/lib/data", () => ({ userExists: mocks.userExists, upsertSubscription: mocks.upsertSubscription }));
+vi.mock("@/services/polar", () => ({ getSubscription: mocks.getSubscription }));
 vi.mock("@/lib/log", () => ({ logError: mocks.logError }));
 vi.mock("@polar-sh/nextjs", async () => {
   // Node의 ESM에서 어댑터의 next/server 확장자 없는 import를 피한다.
@@ -27,6 +28,7 @@ beforeEach(() => {
   vi.stubEnv("POLAR_WEBHOOK_SECRET", "test-webhook-secret");
   mocks.type = "subscription.active"; mocks.externalId = "owner";
   mocks.userExists.mockResolvedValue(true); mocks.upsertSubscription.mockResolvedValue(undefined);
+  mocks.getSubscription.mockResolvedValue({ customerId: "polar-customer", status: "active", cancelAtPeriodEnd: true, currentPeriodEnd: "2026-10-29T00:00:00.000Z" });
 });
 afterEach(() => vi.unstubAllEnvs());
 it("실제 어댑터가 서명 불일치를 403으로 거절하며 본문 사용자 ID를 조회하지 않는다", async () => {
@@ -42,11 +44,20 @@ it.each(["created", "updated", "active", "canceled", "uncanceled", "revoked"])("
   expect(vi.mocked(Webhooks).mock.calls[0][0].webhookSecret).toBe("test-webhook-secret");
   expect(mocks.userExists).toHaveBeenCalledWith("owner");
   expect(mocks.upsertSubscription).toHaveBeenCalledWith({ userId: "owner", polarSubscriptionId: "polar-sub", polarCustomerId: "polar-customer", status: event === "revoked" ? "revoked" : "active", cancelAtPeriodEnd: true, currentPeriodEnd: "2026-10-29T00:00:00.000Z" });
-  expect(mocks.userExists.mock.invocationCallOrder[0]).toBeLessThan(mocks.upsertSubscription.mock.invocationCallOrder[0]);
+  expect(mocks.getSubscription).toHaveBeenCalledWith("polar-sub");
+  expect(mocks.userExists.mock.invocationCallOrder[0]).toBeLessThan(mocks.getSubscription.mock.invocationCallOrder[0]);
+  expect(mocks.getSubscription.mock.invocationCallOrder[0]).toBeLessThan(mocks.upsertSubscription.mock.invocationCallOrder[0]);
 });
-it("없는 사용자면 200으로 무시한다", async () => {
+it("늦게 도착하거나 재시도된 웹훅도 payload가 아닌 Polar의 현재 상태로 저장한다", async () => {
+  mocks.getSubscription.mockResolvedValue({ customerId: "polar-customer", status: "canceled", cancelAtPeriodEnd: false, currentPeriodEnd: null });
+  expect((await POST(request())).status).toBe(200);
+  expect(mocks.upsertSubscription).toHaveBeenCalledWith({ userId: "owner", polarSubscriptionId: "polar-sub", polarCustomerId: "polar-customer", status: "canceled", cancelAtPeriodEnd: false, currentPeriodEnd: null });
+  expect(resolvePlan(mocks.upsertSubscription.mock.calls[0][0])).toBe("free");
+});
+it("없는 사용자면 Polar를 조회하지 않고 200으로 무시한다", async () => {
   mocks.userExists.mockResolvedValue(false);
   expect((await POST(request())).status).toBe(200);
+  expect(mocks.getSubscription).not.toHaveBeenCalled();
   expect(mocks.upsertSubscription).not.toHaveBeenCalled();
 });
 it("external ID가 없으면 사용자 조회 없이 200이다", async () => {
@@ -54,7 +65,7 @@ it("external ID가 없으면 사용자 조회 없이 200이다", async () => {
   expect((await POST(request())).status).toBe(200);
   expect(mocks.userExists).not.toHaveBeenCalled();
 });
-it.each(["userExists", "upsertSubscription"] as const)("%s DB 실패는 재시도를 위한 500이다", async (operation) => {
+it.each(["userExists", "getSubscription", "upsertSubscription"] as const)("%s 실패는 재시도를 위한 500이다", async (operation) => {
   mocks[operation].mockRejectedValue(new Error("원문"));
   const response = await POST(request());
   expect(response.status).toBe(500);

@@ -1,5 +1,6 @@
 import "server-only";
 import { deleteAnalysisRecord, getAnalysisStatus, recoverStaleAnalyses } from "@/lib/data";
+import { logError } from "@/lib/log";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { cancelSubscriptions } from "@/services/polar";
 import { AccountDeletionError, StorageDeleteError } from "@/types/errors";
@@ -63,5 +64,12 @@ export async function deleteAccount(userId: string): Promise<void> {
     if (error) throw new AccountDeletionError("account_delete_failed");
   } catch {
     throw new AccountDeletionError("account_delete_failed");
+  }
+  try {
+    // ②와 ③ 사이에 진행 중이던 업로드가 원본을 남겼을 수 있다. auth 삭제 후에는 새 uploads 기록이 FK로 막힌다.
+    await deleteStoragePrefix(userId);
+  } catch {
+    // 계정은 이미 삭제됐으므로 탈퇴는 완료하고, 남은 원본은 로그로 확인해 정리한다.
+    logError("account_storage_cleanup_failed", { code: "storage_delete_failed" });
   }
 }

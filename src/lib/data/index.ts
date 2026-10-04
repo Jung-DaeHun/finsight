@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { limits, resolvePlan, toAnalysisView } from "@/lib/plan";
 import { monthlyTrend } from "@/lib/analysis";
@@ -7,7 +8,8 @@ import { DataError, type AnalysisErrorCode } from "@/types/errors";
 export { getSubscriptionSummary, upsertSubscription, userExists } from "./subscriptions";
 
 // 이 모듈의 userId 인자는 getClaims()로 검증한 claims.sub만 전달한다.
-export async function getUserPlan(userId: string): Promise<Plan> {
+// 한 요청의 렌더 안에서는 페이지와 getAnalysisView가 같은 플랜을 쓰도록 결과를 공유한다(렌더 밖에서는 매번 조회).
+export const getUserPlan = cache(async (userId: string): Promise<Plan> => {
   const { data, error } = await createAdminClient()
     .from("subscriptions")
     .select("status,cancel_at_period_end,current_period_end")
@@ -24,7 +26,7 @@ export async function getUserPlan(userId: string): Promise<Plan> {
     currentPeriodEnd: data.current_period_end,
   } : null;
   return resolvePlan(subscription);
-}
+});
 
 export async function recoverStaleAnalyses(userId: string): Promise<void> {
   const cutoff = new Date(Date.now() - 6 * 60_000).toISOString();

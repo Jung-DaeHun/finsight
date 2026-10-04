@@ -1,6 +1,8 @@
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { classifyMerchants, mapColumns, modelFor } from "../src/services/claude";
+import { CLASSIFY_BATCH_SIZE, CLASSIFY_CONCURRENCY } from "../src/services/claude-config";
+import { limits } from "../src/lib/plan";
 import type { Plan } from "../src/types";
 
 type Services = { mapColumns: typeof mapColumns; classifyMerchants: typeof classifyMerchants };
@@ -18,10 +20,18 @@ export async function measureClaude(
     const model = modelFor(plan);
     const mappingStarted = now();
     await services.mapColumns(header, samples, plan);
-    write(`${model} 매핑: ${Math.round(now() - mappingStarted)} ms\n`);
+    const mappingMs = now() - mappingStarted;
+    write(`${model} 매핑: ${Math.round(mappingMs)} ms\n`);
     const classifyStarted = now();
     await services.classifyMerchants(merchants, plan);
-    write(`${model} 가맹점 100개 분류: ${Math.round(now() - classifyStarted)} ms\n`);
+    const classifyMs = now() - classifyStarted;
+    write(`${model} 가맹점 100개 분류: ${Math.round(classifyMs)} ms\n`);
+    // 최대 입력은 파일마다 매핑 1회, 모든 행이 고유 가맹점이라고 보고 배치를 동시 호출 수만큼 나눠 실행한다.
+    const { maxFiles, maxSheetRows } = limits(plan);
+    const rows = maxFiles * maxSheetRows;
+    const rounds = Math.ceil(Math.ceil(rows / CLASSIFY_BATCH_SIZE) / CLASSIFY_CONCURRENCY);
+    const estimateMs = Math.round(maxFiles * mappingMs + rounds * classifyMs);
+    write(`${model} 최대 입력(${maxFiles}파일·${rows.toLocaleString("en-US")}행) 예상: ${estimateMs} ms (${estimateMs <= 240_000 ? "240초 이내" : "240초 초과"})\n`);
   }
 }
 

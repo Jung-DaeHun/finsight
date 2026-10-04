@@ -10,6 +10,8 @@ export const ANALYSIS_ERROR_CODES = [
   "unsupported_encoding",
   "unsupported_currency",
   "storage_upload_failed",
+  // DB 장애 등 파일과 무관한 실패. 사용자는 다시 시도하면 된다.
+  "internal_error",
 ] as const;
 
 export const API_ERROR_CODES = [
