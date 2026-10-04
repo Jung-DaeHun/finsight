@@ -197,7 +197,7 @@ interface AnalysisView {        // 서버가 클라이언트로 내보내는 유
 // claude.ts — structured outputs + zod parse. 모델은 plan으로 선택: free → CLAUDE_MODEL_FREE, pro → CLAUDE_MODEL_PRO
 mapColumns(header: string[], sampleRows: string[][], plan: Plan): Promise<ColumnMapping>
 classifyMerchants(merchants: string[], plan: Plan): Promise<Record<string, Category>> // 100개 배치, 누락분은 'other'
-generateInsights(input: { summary; detections; trend? }): Promise<Insight[]> // Pro 전용이라 항상 Pro 모델, 한국어
+generateInsights(input: { summary; detections; trend?; flagged }): Promise<Insight[]> // Pro 전용이라 항상 Pro 모델, 한국어. flagged는 이 분석의 탐지 거래(코드로 묶어 전송)
 // polar.ts
 createCheckout(userId: string, email: string): Promise<string>   // checkout URL
 cancelSubscriptions(userId: string): Promise<void> // Polar에서 현재 구독을 조회하고 추가 청구 중단 확인

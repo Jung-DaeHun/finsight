@@ -5,7 +5,7 @@ import { ClaudeServiceError } from "@/services/claude-errors";
 import { DataError } from "@/types/errors";
 
 const mocks = vi.hoisted(() => ({
-  getUserId: vi.fn(), getAnalysisForInsights: vi.fn(), getUserPlan: vi.fn(), getCompletedHistory: vi.fn(),
+  getUserId: vi.fn(), getAnalysisForInsights: vi.fn(), getUserPlan: vi.fn(), getCompletedHistory: vi.fn(), getFlaggedTransactions: vi.fn(),
   saveInsights: vi.fn(), generateInsights: vi.fn(), logError: vi.fn(), failAnalysis: vi.fn(), completeAnalysis: vi.fn(),
 }));
 vi.mock("@/lib/auth", () => mocks);
@@ -17,6 +17,7 @@ const input = {
   summary: { totalSpend: 12000, byCategory: { food: 12000 }, topMerchants: [], period: { from: "2026-09-30", to: "2026-09-30" }, transactionCount: 1, skippedRows: 0 },
   detections: { recurringCount: 1, anomalyCount: 0 }, insights: null,
 };
+const flagged = [{ occurredOn: "2026-09-30", merchant: "넷플릭스", amount: 17000, direction: "debit", category: "subscription", isRecurring: true, anomalyType: null }];
 const request = new Request("https://finsight.test/api/analyses/analysis/insights", { method: "POST" });
 const context = (id = "analysis") => ({ params: Promise.resolve({ id }) });
 beforeEach(() => {
@@ -25,6 +26,7 @@ beforeEach(() => {
   mocks.getAnalysisForInsights.mockResolvedValue(input);
   mocks.getUserPlan.mockResolvedValue("pro");
   mocks.getCompletedHistory.mockResolvedValue([]);
+  mocks.getFlaggedTransactions.mockResolvedValue(flagged);
   mocks.generateInsights.mockResolvedValue(insights);
   mocks.saveInsights.mockResolvedValue(insights);
 });
@@ -63,15 +65,17 @@ describe("POST /api/analyses/[id]/insights", () => {
     expect(mocks.generateInsights).not.toHaveBeenCalled();
     expect(mocks.saveInsights).not.toHaveBeenCalled();
     expect(mocks.getCompletedHistory).not.toHaveBeenCalled();
+    expect(mocks.getFlaggedTransactions).not.toHaveBeenCalled();
   });
-  it("본인 완료 이력의 추이와 집계로 생성하고 저장한 값만 응답한다", async () => {
+  it("본인 완료 이력의 추이·집계와 이 분석의 탐지 거래로 생성하고 저장한 값만 응답한다", async () => {
     const saved = [{ ...insights[0], title: "먼저 저장된 제안" }];
     mocks.saveInsights.mockResolvedValue(saved);
     const response = await POST(request, context());
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ insights: saved });
     expect(mocks.getCompletedHistory).toHaveBeenCalledWith("owner");
-    expect(mocks.generateInsights).toHaveBeenCalledWith({ summary: input.summary, detections: input.detections, trend: { points: [], comparison: null } });
+    expect(mocks.getFlaggedTransactions).toHaveBeenCalledWith("owner", "analysis");
+    expect(mocks.generateInsights).toHaveBeenCalledWith({ summary: input.summary, detections: input.detections, trend: { points: [], comparison: null }, flagged });
     expect(mocks.saveInsights).toHaveBeenCalledWith("owner", "analysis", insights);
     expect(mocks.getAnalysisForInsights.mock.invocationCallOrder[0]).toBeLessThan(mocks.getUserPlan.mock.invocationCallOrder[0]);
     expect(maxDuration).toBe(300);
