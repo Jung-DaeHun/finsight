@@ -1,4 +1,5 @@
 // @vitest-environment node
+import { createHmac } from "node:crypto";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 import { Webhooks } from "@polar-sh/nextjs";
@@ -17,7 +18,8 @@ vi.mock("@polar-sh/nextjs", async () => {
     if (request.headers.get("webhook-signature") !== "verified-test-event") return actual.Webhooks(config)(request);
     const names = { "subscription.created": "onSubscriptionCreated", "subscription.updated": "onSubscriptionUpdated", "subscription.active": "onSubscriptionActive", "subscription.canceled": "onSubscriptionCanceled", "subscription.uncanceled": "onSubscriptionUncanceled", "subscription.revoked": "onSubscriptionRevoked" } as const;
     const handler = config[names[mocks.type as keyof typeof names]] as ((payload: unknown) => Promise<void>) | undefined;
-    const payload = { type: mocks.type, data: { id: "polar-sub", customerId: "polar-customer", customer: { externalId: mocks.externalId }, status: "active", cancelAtPeriodEnd: true, currentPeriodEnd: new Date("2026-10-29T00:00:00Z") } };
+    // SDK 1.x 웹훅 payload는 Polar API와 같은 snake_case 필드를 쓴다.
+    const payload = { type: mocks.type, data: { id: "polar-sub", customer_id: "polar-customer", customer: { external_id: mocks.externalId }, status: "active", cancel_at_period_end: true, current_period_end: "2026-10-29T00:00:00Z" } };
     if (handler) await handler(payload);
     return Response.json({ received: true });
   }) };
@@ -36,6 +38,19 @@ it("실제 어댑터가 서명 불일치를 403으로 거절하며 본문 사용
   expect(response.status).toBe(403);
   expect(await response.json()).toEqual({ error: { code: "unauthorized" } });
   expect(mocks.userExists).not.toHaveBeenCalled();
+  expect(mocks.upsertSubscription).not.toHaveBeenCalled();
+});
+it("Polar가 whsec_ 시크릿(base64 키)으로 서명한 웹훅을 실제 어댑터가 받아들인다", async () => {
+  // Polar는 whsec_ 시크릿을 Standard Webhooks 방식(접두사 제거 후 base64 디코딩한 키)으로 서명한다.
+  const key = Buffer.from("polar-standard-webhooks-key-32b!");
+  vi.stubEnv("POLAR_WEBHOOK_SECRET", `whsec_${key.toString("base64")}`);
+  const id = "msg_whsec", timestamp = String(Math.floor(Date.now() / 1000));
+  const body = JSON.stringify({ type: "finsight.unhandled", timestamp: new Date().toISOString(), data: {} });
+  const signature = createHmac("sha256", key).update(`${id}.${timestamp}.${body}`).digest("base64");
+  const response = await POST(new NextRequest("https://finsight.example/api/webhooks/polar", {
+    method: "POST", body, headers: { "webhook-id": id, "webhook-timestamp": timestamp, "webhook-signature": `v1,${signature}` },
+  }));
+  expect(response.status).toBe(200);
   expect(mocks.upsertSubscription).not.toHaveBeenCalled();
 });
 it.each(["created", "updated", "active", "canceled", "uncanceled", "revoked"])("서명 검증 이후 subscription.%s를 저장한다", async (event) => {
