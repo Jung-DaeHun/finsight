@@ -1,5 +1,5 @@
 import { getUserId } from "@/lib/auth";
-import { getAnalysisForInsights, getCompletedHistory, getUserPlan, saveInsights } from "@/lib/data";
+import { getAnalysisForInsights, getCompletedHistory, getFlaggedTransactions, getUserPlan, saveInsights } from "@/lib/data";
 import { monthlyTrend } from "@/lib/analysis";
 import { apiError } from "@/lib/api-error";
 import { logError } from "@/lib/log";
@@ -22,7 +22,8 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
     if (await getUserPlan(userId) !== "pro") return apiError("pro_required", 403);
     if (analysis.insights !== null) return Response.json({ insights: analysis.insights });
     const trend = monthlyTrend(await getCompletedHistory(userId));
-    const generated = await generateInsights({ summary: analysis.summary, detections: analysis.detections, trend });
+    const flagged = await getFlaggedTransactions(userId, analysisId);
+    const generated = await generateInsights({ summary: analysis.summary, detections: analysis.detections, trend, flagged });
     const insights = await saveInsights(userId, analysisId, generated);
     return Response.json({ insights });
   } catch (error) {

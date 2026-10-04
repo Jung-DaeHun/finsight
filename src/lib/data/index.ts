@@ -341,6 +341,10 @@ export async function getAnalysisForInsights(userId: string, analysisId: string)
   };
 }
 
+export async function getFlaggedTransactions(userId: string, analysisId: string): Promise<Transaction[]> {
+  return (await analysisTransactions(userId, analysisId)).filter((tx) => tx.isRecurring || tx.anomalyType !== null);
+}
+
 export async function saveInsights(userId: string, analysisId: string, insights: Insight[]): Promise<Insight[]> {
   const { data, error } = await createAdminClient().from("analyses")
     .update({ insights: insightFields(insights) }).eq("user_id", userId).eq("id", analysisId)

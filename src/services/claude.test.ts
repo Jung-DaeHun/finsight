@@ -156,19 +156,25 @@ describe("가맹점 분류", () => {
   });
 });
 
-it("인사이트에는 집계값만 보내며 Pro 모델과 medium effort를 쓴다", async () => {
+it("인사이트에는 집계값·상위 가맹점·코드로 묶은 탐지 거래를 보내며 Pro 모델과 medium effort를 쓴다", async () => {
   parse.mockResolvedValue({ stop_reason: "end_turn", parsed_output: { insights: [
     { title: "지출 점검", body: "식비를 점검하세요.", monthlySaving: 3000 },
     { title: "정기 결제", body: "구독을 확인하세요.", monthlySaving: 2000 },
     { title: "다음 달", body: "계획을 세우세요.", monthlySaving: 1000 },
   ] } });
-  expect(await generateInsights({ summary, detections: { recurringCount: 1, anomalyCount: 2 } })).toHaveLength(3);
+  const dup = { occurredOn: "2026-09-12", merchant: "넥슨", amount: 27000, direction: "debit", category: "other", isRecurring: false, anomalyType: "duplicate" } as const;
+  expect(await generateInsights({ summary, detections: { recurringCount: 0, anomalyCount: 2 }, flagged: [dup, dup] })).toHaveLength(3);
   const request = parse.mock.calls[0][0];
   expect(request.model).toBe("claude-opus-5-5");
   expect(request.max_tokens).toBe(CLAUDE_MAX_TOKENS);
   expect(request.output_config.effort).toBe("medium");
-  expect(request.messages[0].content).toContain("100000");
-  expect(request.messages[0].content).not.toContain("상점");
+  const payload = JSON.parse(request.messages[0].content);
+  expect(payload.totalSpend).toBe(100000);
+  expect(payload.topMerchants).toEqual([{ merchant: "상점", amount: 30000 }]);
+  expect(payload.flagged).toEqual([{ type: "duplicate", merchant: "넥슨", amount: 27000, count: 2, total: 54000, dates: ["2026-09-12"] }]);
+  expect(request.system).toContain("가맹점");
+  // 여러 값을 더한 새 금액(예: 두 가맹점 합계)을 본문에 만들지 않도록 금지한다.
+  expect(request.system).toContain("더하거나 빼서 새 숫자를 만들지 마세요");
 });
 
 it("인사이트의 음수 절약 금액은 거부한다", async () => {
@@ -177,6 +183,6 @@ it("인사이트의 음수 절약 금액은 거부한다", async () => {
     { title: "점검", body: "확인", monthlySaving: 0 },
     { title: "점검", body: "확인", monthlySaving: 0 },
   ] } });
-  await expect(generateInsights({ summary, detections: { recurringCount: 0, anomalyCount: 0 } }))
+  await expect(generateInsights({ summary, detections: { recurringCount: 0, anomalyCount: 0 }, flagged: [] }))
     .rejects.toMatchObject({ code: "llm_unavailable" });
 });

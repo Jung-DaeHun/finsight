@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { deleteAnalysisRecord, getAnalysisForInsights, getAnalysisStatus, getAnalysisView, listAnalyses, saveInsights } from "./index";
+import { deleteAnalysisRecord, getAnalysisForInsights, getAnalysisStatus, getFlaggedTransactions, getAnalysisView, listAnalyses, saveInsights } from "./index";
 import { DataError } from "@/types/errors";
 import type { AnalysisSummary, Insight } from "@/types";
 
@@ -149,6 +149,15 @@ describe("인사이트·삭제 데이터 래퍼", () => {
   it.each(["missing", "foreign", "processing", "failed"])("인사이트 %s 조회는 null이다", async (id) => {
     query();
     expect(await getAnalysisForInsights("owner", id)).toBeNull();
+  });
+  it("탐지 거래 조회는 본인 분석 거래 중 정기결제·이상거래만 반환한다", async () => {
+    const q = query({ data: [dbTx, { ...dbTx, is_recurring: false, anomaly_type: null }] });
+    expect(await getFlaggedTransactions("owner", "analysis")).toEqual([{
+      occurredOn: "2026-09-30", amount: 12000, direction: "debit", merchant: "상점", category: "food",
+      isRecurring: true, anomalyType: "duplicate",
+    }]);
+    expect(q.eq).toHaveBeenCalledWith("user_id", "owner");
+    expect(q.eq).toHaveBeenCalledWith("analysis_id", "analysis");
   });
   it("인사이트 저장은 null인 본인 completed 분석에만 허용하고 저장값을 반환한다", async () => {
     const q = query({ data: { insights } });
