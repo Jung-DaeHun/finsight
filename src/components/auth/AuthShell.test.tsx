@@ -16,6 +16,13 @@ it("Google 버튼은 disabled 상태에서 인증 요청을 보내지 않는다"
   expect(onClick).not.toHaveBeenCalled();
 });
 
+it("Google 버튼은 글자 G 대신 공식 Google 로고를 장식으로 보여준다", () => {
+  render(<GoogleButton disabled={false} onClick={vi.fn()} />);
+  const button = screen.getByRole("button", { name: "Google로 계속하기" });
+  expect(button.querySelector("svg[aria-hidden='true']")).not.toBeNull();
+  expect(button).toHaveTextContent(/^Google로 계속하기$/);
+});
+
 it("인증 오류와 발송 안내를 접근 가능한 상태로 제공한다", () => {
   render(<AuthFeedback error="invalid_credentials" notice="메일을 보냈습니다." />);
   expect(screen.getByRole("alert")).toHaveTextContent("이메일 또는 비밀번호를 확인해 주세요.");
