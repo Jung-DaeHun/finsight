@@ -34,7 +34,7 @@ export type AnalysisErrorCode = (typeof ANALYSIS_ERROR_CODES)[number];
 export type ApiErrorCode = (typeof API_ERROR_CODES)[number];
 
 export const AUTH_ERROR_CODES = [
-  "invalid_email", "password_too_short", "consent_required", "invalid_credentials",
+  "invalid_email", "password_too_short", "password_mismatch", "consent_required", "invalid_credentials",
   "email_not_confirmed", "auth_failed", "auth_link_expired", "oauth_failed", "auth_rate_limited",
 ] as const;
 

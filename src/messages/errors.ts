@@ -30,6 +30,7 @@ export const ERROR_MESSAGES: Record<AnalysisErrorCode | ApiErrorCode, string> = 
 export const AUTH_ERROR_MESSAGES: Record<AuthErrorCode, string> = {
   invalid_email: "이메일 형식을 확인해 주세요.",
   password_too_short: "비밀번호는 8자 이상입니다.",
+  password_mismatch: "비밀번호가 일치하지 않습니다.",
   consent_required: "필수 항목에 동의해 주세요.",
   invalid_credentials: "이메일 또는 비밀번호를 확인해 주세요.",
   email_not_confirmed: "이메일 인증이 필요합니다.",

@@ -15,9 +15,10 @@ beforeEach(() => {
 function agree() {
   for (const checkbox of screen.getAllByRole("checkbox")) fireEvent.click(checkbox);
 }
-function fill(email = "new@example.com", password = "password123") {
+function fill(email = "new@example.com", password = "password123", passwordConfirm = password) {
   fireEvent.change(screen.getByLabelText("이메일"), { target: { value: email } });
   fireEvent.change(screen.getByLabelText("비밀번호"), { target: { value: password } });
+  fireEvent.change(screen.getByLabelText("비밀번호 확인"), { target: { value: passwordConfirm } });
 }
 
 it("J1 두 필수 동의 전까지 이메일·Google 가입을 비활성화한다", () => {
@@ -72,6 +73,27 @@ it("가입 전 이메일·비밀번호를 검증한다", () => {
   expect(screen.getByText("이메일 형식을 확인해 주세요.")).toBeVisible();
   expect(screen.getByText("비밀번호는 8자 이상입니다.")).toBeVisible();
   expect(mocks.signUp).not.toHaveBeenCalled();
+});
+
+it("비밀번호 확인 칸은 새 비밀번호 자동완성을 쓰는 비밀번호 입력이다", () => {
+  render(<SignupForm />);
+  const confirm = screen.getByLabelText("비밀번호 확인");
+  expect(confirm).toHaveAttribute("type", "password");
+  expect(confirm).toHaveAttribute("autocomplete", "new-password");
+});
+
+it("비밀번호 확인이 다르면 확인 칸에 알리고 가입 요청을 보내지 않으며, 일치하면 가입한다", async () => {
+  render(<SignupForm />);
+  agree();
+  fill("new@example.com", "password123", "password124");
+  fireEvent.click(screen.getByRole("button", { name: "가입하기" }));
+  expect(screen.getByLabelText("비밀번호 확인")).toHaveAccessibleDescription("비밀번호가 일치하지 않습니다.");
+  expect(screen.getByLabelText("비밀번호 확인")).toHaveAttribute("aria-invalid", "true");
+  expect(mocks.signUp).not.toHaveBeenCalled();
+  fireEvent.change(screen.getByLabelText("비밀번호 확인"), { target: { value: "password123" } });
+  fireEvent.click(screen.getByRole("button", { name: "가입하기" }));
+  expect(await screen.findByRole("heading", { name: "메일함을 확인해 주세요" })).toBeVisible();
+  expect(mocks.signUp).toHaveBeenCalledTimes(1);
 });
 
 it.each([
