@@ -72,7 +72,8 @@ function InsightContent({ view }: { view: AnalysisView }) {
 }
 
 export function InsightsPanel({ view }: { view: AnalysisView }) {
-  return <section aria-label="AI 인사이트"><SectionHead title="AI 인사이트" />
+  const { mode } = useResultContext();
+  return <section aria-label="AI 인사이트"><SectionHead title="AI 인사이트" pro={mode === "sample"} />
     {"insights" in view ? <InsightContent key={view.id} view={view} />
       : <LockCard title="AI 인사이트 & 절약 조언" description="이번 분석을 바탕으로 줄일 수 있는 지출과 예상 절약액을 알려드립니다." />}
   </section>;

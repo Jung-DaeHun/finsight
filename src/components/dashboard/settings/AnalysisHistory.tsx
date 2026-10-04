@@ -65,7 +65,7 @@ export function AnalysisHistory({ items, disabled, onPendingChange }: {
         {confirm === item.id ? <div className="flex items-center gap-3">
           <button type="button" disabled={pending || disabled} onClick={() => { setConfirm(null); setError(null); }} className="text-sm font-medium text-ink disabled:text-stone">취소</button>
           <Button size="sm" disabled={pending || disabled} onClick={() => remove(item.id)}>{pending ? "삭제 중…" : "삭제"}</Button>
-        </div> : <IconButton icon="trash-2" aria-label={`${title} 삭제`} variant="ghost" size={36} disabled={pending || disabled} onClick={() => { setConfirm(item.id); setError(null); }} />}
+        </div> : <IconButton icon="trash-2" aria-label={`${title} 삭제${item.filenames.length ? ` (${item.filenames.join(", ")})` : ""}`} variant="ghost" size={36} disabled={pending || disabled} onClick={() => { setConfirm(item.id); setError(null); }} />}
       </li>;
     })}</ul>}
     {toast && <Toast key={toast} message="분석을 삭제했습니다." onClose={() => setToast(null)} />}

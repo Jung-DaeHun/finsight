@@ -18,16 +18,23 @@ function response(status: number, code?: string) {
   return { status, ok: status >= 200 && status < 300, json: async () => ({ error: { code } }) };
 }
 function confirmAnalysis() {
-  fireEvent.click(screen.getByRole("button", { name: "2026년 9월 삭제" }));
+  fireEvent.click(screen.getByRole("button", { name: "2026년 9월 삭제 (카드.csv, 은행.xlsx)" }));
   fireEvent.click(screen.getByRole("button", { name: "삭제" }));
 }
 beforeEach(() => { vi.resetAllMocks(); vi.stubGlobal("fetch", mocks.fetch); });
 afterEach(() => vi.unstubAllGlobals());
 
 describe("AnalysisHistory", () => {
+  it("A11Y-1 삭제 버튼 접근성 이름에 파일명을 넣어 같은 제목의 행도 구분한다", () => {
+    const failed: AnalysisListItem = { id: "failed-2", status: "failed", createdAt: "2026-10-03T00:00:00Z", filenames: ["다른.csv"], errorCode: "not_transactions" };
+    show(free, [...items, failed]);
+    expect(screen.getByRole("button", { name: "분석 실패 삭제 (실패.csv)" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "분석 실패 삭제 (다른.csv)" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "2026년 9월 삭제 (카드.csv, 은행.xlsx)" })).toBeVisible();
+  });
   it("삭제 아이콘은 인라인 확인을 열고 취소는 요청 없이 닫는다", () => {
     show();
-    fireEvent.click(screen.getByRole("button", { name: "2026년 9월 삭제" }));
+    fireEvent.click(screen.getByRole("button", { name: "2026년 9월 삭제 (카드.csv, 은행.xlsx)" }));
     expect(screen.getByRole("button", { name: "삭제" })).toBeVisible();
     expect(screen.getByRole("button", { name: "취소" })).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "취소" }));

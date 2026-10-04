@@ -174,6 +174,21 @@ describe("인사이트 상태 전이", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent(ERROR_MESSAGES.internal_error);
     expect(screen.queryByText(/private detail/)).not.toBeInTheDocument();
   });
+  it("B9 샘플은 Pro 전용 섹션 제목 옆에만 Pro 배지를 표시하고, 일반 결과에는 표시하지 않는다", () => {
+    const input = view(); input.id = "sample"; input.insights = fetchedInsights;
+    const { unmount } = render(<ResultView view={input} mode="sample" />);
+    for (const name of ["월별 추이", "AI 인사이트", "정기결제", "이상거래"]) {
+      const region = within(screen.getByRole("region", { name }));
+      expect(region.getByText("Pro")).toBeVisible();
+      expect(region.getByText("Pro").previousElementSibling).toBe(region.getByRole("heading", { name }));
+    }
+    for (const name of ["카테고리별 지출", "상위 가맹점", "거래 내역"]) {
+      expect(within(screen.getByRole("region", { name })).queryByText("Pro")).not.toBeInTheDocument();
+    }
+    unmount();
+    render(<ResultView view={view()} mode="user" />);
+    expect(screen.queryByText("Pro")).not.toBeInTheDocument();
+  });
   it("샘플은 저장된 인사이트와 홈 링크를 바로 표시하고 호출하지 않는다", () => {
     const input = view(); input.id = "sample"; input.insights = fetchedInsights;
     render(<ResultView view={input} mode="sample" />);

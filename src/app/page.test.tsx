@@ -5,8 +5,9 @@ import { formatMonthTitle, formatWon } from "@/lib/format";
 import { limits } from "@/lib/plan";
 import sample from "@/sample/analysis.json";
 
-const mocks = vi.hoisted(() => ({ getUserId: vi.fn() }));
-vi.mock("@/lib/auth", () => mocks);
+const mocks = vi.hoisted(() => ({ getUserId: vi.fn(), getUserPlan: vi.fn() }));
+vi.mock("@/lib/auth", () => ({ getUserId: mocks.getUserId }));
+vi.mock("@/lib/data", () => ({ getUserPlan: mocks.getUserPlan }));
 vi.mock("@/app/auth/actions", () => ({ signOut: vi.fn() }));
 vi.mock("@/lib/plan", async (importOriginal) => {
   const original = await importOriginal<typeof import("@/lib/plan")>();
@@ -15,28 +16,42 @@ vi.mock("@/lib/plan", async (importOriginal) => {
 
 beforeEach(async () => {
   mocks.getUserId.mockReset().mockResolvedValue(null);
+  mocks.getUserPlan.mockReset().mockResolvedValue("free");
   const original = await vi.importActual<typeof import("@/lib/plan")>("@/lib/plan");
   vi.mocked(limits).mockReset().mockImplementation(original.limits);
 });
 
 describe("J1 랜딩", () => {
-  it.each([null, "signed-in-user"])("로그인 상태 %s에 맞게 모든 시작 CTA와 공개 헤더를 연결한다", async (userId) => {
-    mocks.getUserId.mockResolvedValue(userId);
+  it("비로그인 방문자의 모든 시작 CTA를 가입으로 연결한다", async () => {
     render(await Home());
 
     expect(mocks.getUserId).toHaveBeenCalledOnce();
+    expect(mocks.getUserPlan).not.toHaveBeenCalled();
     const links = screen.getAllByRole("link", { name: "무료로 시작하기" });
-    expect(links).toHaveLength(userId ? 3 : 4);
-    for (const link of links) expect(link).toHaveAttribute("href", userId ? "/dashboard" : "/signup");
-    expect(screen.getByRole("link", { name: "Pro 시작하기" })).toHaveAttribute("href", userId ? "/dashboard" : "/signup");
+    expect(links).toHaveLength(4);
+    for (const link of links) expect(link).toHaveAttribute("href", "/signup");
+    expect(screen.getByRole("link", { name: "Pro 시작하기" })).toHaveAttribute("href", "/signup");
     expect(screen.getByRole("link", { name: "샘플 결과 보기" })).toHaveAttribute("href", "/sample");
-    if (userId) {
-      expect(screen.getByRole("link", { name: "대시보드" })).toHaveAttribute("href", "/dashboard");
-      expect(screen.queryByRole("link", { name: "로그인" })).not.toBeInTheDocument();
-      expect(document.querySelector('a[href="/signup"]')).not.toBeInTheDocument();
-    } else {
-      expect(screen.getByRole("link", { name: "로그인" })).toHaveAttribute("href", "/login");
-    }
+    expect(screen.getByRole("link", { name: "로그인" })).toHaveAttribute("href", "/login");
+  });
+
+  it.each([
+    ["free", "Pro로 업그레이드"],
+    ["pro", null],
+  ] as const)("로그인한 %s 사용자에게는 같은 목적지에 같은 문구(대시보드)를 쓰고 플랜에 맞는 Pro 버튼을 보여준다", async (plan, proLabel) => {
+    mocks.getUserId.mockResolvedValue("signed-in-user");
+    mocks.getUserPlan.mockResolvedValue(plan);
+    render(await Home());
+
+    expect(mocks.getUserPlan).toHaveBeenCalledWith("signed-in-user");
+    expect(screen.queryByRole("link", { name: "무료로 시작하기" })).not.toBeInTheDocument();
+    const links = screen.getAllByRole("link", { name: "대시보드" });
+    expect(links).toHaveLength(4);
+    for (const link of links) expect(link).toHaveAttribute("href", "/dashboard");
+    expect(screen.queryByRole("link", { name: "로그인" })).not.toBeInTheDocument();
+    expect(document.querySelector('a[href="/signup"]')).not.toBeInTheDocument();
+    if (proLabel) expect(screen.getByRole("link", { name: proLabel })).toHaveAttribute("href", "/api/checkout");
+    else expect(screen.getByText("이용 중인 플랜입니다")).toBeVisible();
   });
 
   it("샘플 JSON의 기간·총지출·상위 4개 카테고리·탐지 건수를 미리보기로 표시한다", async () => {
@@ -77,7 +92,7 @@ describe("J1 랜딩", () => {
     render(await Home());
     const pricing = within(screen.getByRole("region", { name: "요금제" }));
     expect(pricing.getByText("$0")).toBeVisible();
-    expect(pricing.getByText("$9")).toBeVisible();
+    expect(pricing.getByText("$20")).toBeVisible();
     expect(pricing.getByText("/ 월")).toBeVisible();
     const rows = within(pricing.getByRole("table", { name: "Free와 Pro 기능 비교" })).getAllByRole("row");
     expect(rows).toHaveLength(8);

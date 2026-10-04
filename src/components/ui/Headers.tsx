@@ -11,12 +11,12 @@ export function PublicHeader({ signedIn }: { signedIn: boolean }) {
   return <header className={`${headerClass} max-[860px]:grid-cols-[auto_1fr]`}>
     <Wordmark />
     <nav aria-label="공개 메뉴" className="flex h-full items-center gap-1 max-[860px]:hidden">
-      <Link href="/#features" className="px-3 font-medium no-underline">기능</Link>
-      <Link href="/#pricing" className="px-3 font-medium no-underline">요금제</Link>
-      <Link href="/sample" className="px-3 font-medium no-underline">샘플 결과</Link>
+      <Link href="/#features" className="px-3 font-medium no-underline hover:text-charcoal">기능</Link>
+      <Link href="/#pricing" className="px-3 font-medium no-underline hover:text-charcoal">요금제</Link>
+      <Link href="/sample" className="px-3 font-medium no-underline hover:text-charcoal">샘플 결과</Link>
     </nav>
     <div className="flex items-center justify-end gap-3">
-      {signedIn ? <Button size="sm" href="/dashboard">대시보드</Button> : <><Link href="/login" className="text-sm font-medium no-underline">로그인</Link><Button size="sm" href="/signup">무료로 시작하기</Button></>}
+      {signedIn ? <Button size="sm" href="/dashboard">대시보드</Button> : <><Link href="/login" className="text-sm font-medium no-underline hover:text-charcoal">로그인</Link><Button size="sm" href="/signup">무료로 시작하기</Button></>}
     </div>
   </header>;
 }

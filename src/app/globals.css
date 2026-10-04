@@ -58,6 +58,22 @@ body {
   color: var(--text-primary);
   font: var(--type-body-md);
   -webkit-font-smoothing: antialiased;
+  /* 한글은 어절 단위로 줄바꿈한다. 파일명·이메일처럼 긴 단어만 넘칠 때 끊는다. */
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+/* base 레이어에 둬서 입력처럼 자체 포커스 표시(outline-none + 테두리)를 가진 컴포넌트의 유틸리티가 이기게 한다. */
+@layer base {
+  /* UX_GUIDE 2.5: 키보드 포커스는 2px 잉크 outline + 2px offset. 잉크 면 위에서는 흰색으로 바꿔 보이게 한다. */
+  :focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .bg-ink :focus-visible { outline-color: var(--on-primary); }
+
+  /* UX_GUIDE 2.5: 움직임 줄이기를 켜면 막대 너비 transition과 버튼 누름 scale을 끈다. */
+  @media (prefers-reduced-motion: reduce) {
+    *, ::before, ::after { transition-duration: 0s !important; }
+    :active { scale: none !important; }
+  }
 }
 
 @media (min-width: 1920px) { :root { --gutter: 80px; } }
@@ -73,4 +89,12 @@ body {
   --font-sans: var(--font-body); --font-heading: var(--font-heading); --font-display: var(--font-display);
   --radius-pill: var(--radius-lg); --radius-input: var(--radius-md);
   --ease-standard: var(--ease-standard);
+}
+
+/* 랜딩 히어로 진입 애니메이션(첫 로드 1회). 움직임 줄이기를 존중하도록 `motion-safe:`로만 쓴다. */
+@theme {
+  --animate-rise: rise 700ms var(--ease-standard) both;
+  --animate-grow-x: grow-x 900ms var(--ease-standard) both;
+  @keyframes rise { from { opacity: 0; translate: 0 16px; } }
+  @keyframes grow-x { from { scale: 0 1; } }
 }

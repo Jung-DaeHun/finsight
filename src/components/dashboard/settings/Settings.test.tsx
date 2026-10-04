@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Settings } from "./Settings";
 import type { AnalysisListItem } from "@/types";
@@ -28,9 +28,17 @@ describe("J7: 설정과 분석 개별 삭제", () => {
   });
   it("Pro의 다음 결제일과 구독 관리 링크를 표시한다", () => {
     render(<Settings subscription={{ plan: "pro", currentPeriodEnd: "2026-10-29T00:00:00Z" }} used={2} items={[]} email="member@example.com" />);
-    expect(screen.getByText(/\$9\/월 · 다음 결제일 2026.10.29/)).toBeVisible();
+    expect(screen.getByText(/\$20\/월 · 다음 결제일 2026.10.29/)).toBeVisible();
     expect(screen.getByRole("link", { name: "구독 관리" })).toHaveAttribute("href", "/api/portal");
     expect(screen.queryByText("Pro로 업그레이드")).not.toBeInTheDocument();
+  });
+  it("B16 Pro 구독 관리 옆에 해지 후 과거 분석 열람 안내를 두고, Free에는 두지 않는다", () => {
+    const notice = "해지해도 과거 분석은 계속 볼 수 있습니다. Pro 전용 항목만 다시 잠깁니다.";
+    const { unmount } = render(<Settings subscription={{ plan: "pro", currentPeriodEnd: "2026-10-29T00:00:00Z" }} used={2} items={[]} email="member@example.com" />);
+    expect(within(screen.getByRole("region", { name: "구독" })).getByText(notice)).toBeVisible();
+    unmount();
+    show();
+    expect(screen.queryByText(notice)).not.toBeInTheDocument();
   });
   it("결제일·분석 생성일은 UTC 날짜가 아니라 한국 날짜로 표시한다", () => {
     const items = [{ id: "late", status: "completed" as const, createdAt: "2026-10-01T16:00:00Z", filenames: ["카드.csv"], periodTo: "2026-09-30", totalSpend: 1000 }];

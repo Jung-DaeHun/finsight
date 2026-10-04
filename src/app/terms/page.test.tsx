@@ -11,7 +11,7 @@ it("이용약관을 공개하고 플랜·결제·데이터 삭제 조건을 안�
   expect(body).toHaveTextContent("원화(KRW)");
   expect(body).toHaveTextContent("Free");
   expect(body).toHaveTextContent("Pro");
-  expect(body).toHaveTextContent("$9");
+  expect(body).toHaveTextContent("$20");
   expect(body).toHaveTextContent("Polar");
   expect(body).toHaveTextContent("개별 삭제");
   expect(body).toHaveTextContent("회원 탈퇴");

@@ -10,8 +10,8 @@ export function AuthShell({ children }: { children: ReactNode }) {
   </main>;
 }
 
-export function GoogleButton({ disabled, onClick }: { disabled: boolean; onClick: () => void }) {
-  return <button type="button" disabled={disabled} onClick={onClick} className="group flex h-12 w-full items-center justify-center gap-2.5 rounded-pill border border-hairline bg-canvas font-medium text-ink disabled:cursor-not-allowed disabled:bg-hairline-soft disabled:text-stone">
+export function GoogleButton({ disabled, onClick, describedBy }: { disabled: boolean; onClick: () => void; describedBy?: string }) {
+  return <button type="button" disabled={disabled} onClick={onClick} aria-describedby={describedBy} className="group flex h-12 w-full items-center justify-center gap-2.5 rounded-pill border border-hairline bg-canvas font-medium text-ink disabled:cursor-not-allowed disabled:bg-hairline-soft disabled:text-stone">
     {/* Google 브랜딩 가이드의 공식 G 로고 */}
     <svg aria-hidden="true" viewBox="0 0 48 48" className="size-[18px] group-disabled:opacity-40 group-disabled:grayscale">
       <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />

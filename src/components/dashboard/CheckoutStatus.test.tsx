@@ -1,4 +1,4 @@
-import { act, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { CheckoutStatus } from "./CheckoutStatus";
 const mocks = vi.hoisted(() => ({ refresh: vi.fn() }));
@@ -39,6 +39,19 @@ it("처음부터 Pro이면 Toast만 표시한다", () => {
   expect(screen.getByText("Pro가 활성화됐습니다")).toBeVisible();
   act(() => vi.advanceTimersByTime(60_000));
   expect(mocks.refresh).not.toHaveBeenCalled();
+});
+it("B10: 자동 확인이 끝나도 Free면 스피너 대신 지연 안내와 새로고침 버튼을 보여 준다", () => {
+  render(<CheckoutStatus plan="free" />);
+  expect(screen.getByRole("status", { name: "결제 상태 확인" })).toBeInTheDocument();
+  act(() => vi.advanceTimersByTime(57_000));
+  expect(screen.queryByText("확인이 늦어지고 있습니다. 잠시 후 새로고침해 주세요.")).not.toBeInTheDocument();
+  act(() => vi.advanceTimersByTime(3_000));
+  expect(screen.queryByRole("status", { name: "결제 상태 확인" })).not.toBeInTheDocument();
+  expect(screen.getByText("확인이 늦어지고 있습니다. 잠시 후 새로고침해 주세요.")).toBeVisible();
+  // soft-cloud 배너 위에서 버튼 경계가 사라지지 않게 흰 pill을 쓴다.
+  expect(screen.getByRole("button", { name: "새로고침" })).toHaveClass("bg-canvas");
+  fireEvent.click(screen.getByRole("button", { name: "새로고침" }));
+  expect(mocks.refresh).toHaveBeenCalledTimes(21);
 });
 it("unmount하면 refresh 타이머를 정리한다", () => {
   const { unmount } = render(<CheckoutStatus plan="free" />);

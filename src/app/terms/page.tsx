@@ -19,7 +19,7 @@ export default function TermsPage() {
       </section>
       <section className="flex flex-col gap-3">
         <h2 className="text-2xl leading-[1.2] font-medium">3. 결제와 해지</h2>
-        <p>Pro 구독은 월 $9이며, Polar를 통해 미국 달러(USD)로 결제합니다. 구독 관리와 해지는 설정의 Polar 고객 포털에서 진행할 수 있습니다.</p>
+        <p>Pro 구독은 월 $20이며, Polar를 통해 미국 달러(USD)로 결제합니다. 구독 관리와 해지는 설정의 Polar 고객 포털에서 진행할 수 있습니다.</p>
         <p>해지를 예약해도 이용 기간이 끝날 때까지 Pro 기능을 사용할 수 있습니다. 기간 종료 후에는 Free로 전환되며, 과거 분석은 계속 열람할 수 있고 Pro 기능만 제한됩니다.</p>
       </section>
       <section className="flex flex-col gap-3">
