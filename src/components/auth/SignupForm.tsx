@@ -14,9 +14,10 @@ import { VerifySent } from "./VerifySent";
 export function SignupForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [passwordConfirm, setPasswordConfirm] = useState("");
   const [terms, setTerms] = useState(false);
   const [transfer, setTransfer] = useState(false);
-  const [errors, setErrors] = useState<ReturnType<typeof validateCredentials> & { consent?: AuthErrorCode }>({});
+  const [errors, setErrors] = useState<ReturnType<typeof validateCredentials> & { passwordConfirm?: AuthErrorCode; consent?: AuthErrorCode }>({});
   const [error, setError] = useState<AuthErrorCode>();
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
@@ -25,7 +26,11 @@ export function SignupForm() {
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (busy) return;
-    const validation = { ...validateCredentials(email, password), ...(!agreed && { consent: "consent_required" as const }) };
+    const validation = {
+      ...validateCredentials(email, password),
+      ...(password !== passwordConfirm && { passwordConfirm: "password_mismatch" as const }),
+      ...(!agreed && { consent: "consent_required" as const }),
+    };
     setErrors(validation);
     if (Object.keys(validation).length) return;
     setBusy(true);
@@ -34,7 +39,7 @@ export function SignupForm() {
       const { error } = await createClient().auth.signUp({ email: email.trim(), password, options: { emailRedirectTo: authUrl("/auth/confirm") } });
       // 기존 계정에 대한 identities·user 데이터는 계정 열거 방지를 위해 사용하지 않는다.
       if (error && error.code !== "user_already_exists") setError(authErrorCode(error));
-      else { setPassword(""); setSent(true); }
+      else { setPassword(""); setPasswordConfirm(""); setSent(true); }
     } catch {
       setError("auth_failed");
     } finally {
@@ -65,6 +70,7 @@ export function SignupForm() {
     <EmailDivider />
     <Field id="signup-email" label="이메일" type="email" autoComplete="email" placeholder="name@example.com" value={email} disabled={busy} onChange={(event) => setEmail(event.target.value)} error={errors.email && AUTH_ERROR_MESSAGES[errors.email]} />
     <Field id="signup-password" label="비밀번호" type="password" autoComplete="new-password" value={password} disabled={busy} onChange={(event) => setPassword(event.target.value)} hint="8자 이상" error={errors.password && AUTH_ERROR_MESSAGES[errors.password]} />
+    <Field id="signup-password-confirm" label="비밀번호 확인" type="password" autoComplete="new-password" value={passwordConfirm} disabled={busy} onChange={(event) => setPasswordConfirm(event.target.value)} error={errors.passwordConfirm && AUTH_ERROR_MESSAGES[errors.passwordConfirm]} />
     <div className="flex flex-col gap-2.5 bg-soft-cloud p-4" role="group" aria-label="필수 동의" aria-describedby={errors.consent ? "consent-error" : undefined}>
       <label className="flex cursor-pointer items-start gap-2.5 text-sm font-medium">
         <input type="checkbox" checked={terms} disabled={busy} onChange={(event) => setTerms(event.target.checked)} className="mt-[3px] size-4 shrink-0 accent-ink" />
