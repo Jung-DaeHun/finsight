@@ -84,6 +84,7 @@ class StepExecutor:
         self._print_header()
         self._check_blockers()
         self._checkout_branch()
+        self._check_branch_freshness()
         guardrails = self._load_guardrails()
         self._ensure_created_at()
         self._execute_all_steps(guardrails)
@@ -132,6 +133,19 @@ class StepExecutor:
             sys.exit(1)
 
         print(f"  Branch: {branch}")
+
+    def _check_branch_freshness(self):
+        """origin/main의 커밋이 작업 브랜치에 없으면 중단한다. 배포 step이 옛 코드로 운영을 덮지 않게 한다."""
+        self._run_git("fetch", "--quiet", "origin", "main")
+        r = self._run_git("rev-list", "--count", "HEAD..origin/main")
+        if r.returncode != 0:
+            print("  WARN: origin/main과 비교하지 못했습니다. 브랜치가 main을 포함하는지 직접 확인하세요.")
+            return
+        behind = int(r.stdout.strip() or 0)
+        if behind:
+            print(f"  ERROR: 작업 브랜치에 origin/main의 커밋 {behind}개가 없습니다.")
+            print(f"  Hint: git merge origin/main 후 다시 실행하세요. 이유: 배포 step이 옛 코드로 운영을 덮을 수 있습니다.")
+            sys.exit(1)
 
     def _commit_step(self, step_num: int, step_name: str):
         output_rel = f"phases/{self._phase_dir_name}/step{step_num}-output.json"

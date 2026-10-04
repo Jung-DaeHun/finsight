@@ -25,6 +25,7 @@
 5. **AC는 실행 가능한 커맨드** — "~가 동작해야 한다" 같은 추상적 서술이 아닌 `npm run build && npm test` 같은 실제 실행 가능한 검증 커맨드를 포함한다.
 6. **주의사항은 구체적으로** — "조심해라" 대신 "X를 하지 마라. 이유: Y" 형식으로 적는다.
 7. **네이밍** — step name은 kebab-case slug로, 해당 step의 핵심 모듈/작업을 한두 단어로 표현한다 (예: `project-setup`, `api-layer`, `auth-flow`).
+8. **연동은 실제 경로로 검증** — 배포·외부 서비스(인증, 결제 웹훅, DB) 연동 step의 AC에는 정적 페이지 200이 아니라 그 연동이 실제로 통하는지 확인하는 커맨드를 넣는다 (예: 환경 변수 형식 검사 — Supabase URL은 경로 없는 origin, 배포본에 들어간 Supabase URL로 `/auth/v1/settings` 응답 확인). 이유: 0-mvp go-live는 랜딩 200만 확인해, `/rest/v1/`이 붙은 Supabase URL로 운영 로그인·DB가 깨진 것을 놓쳤다.
 
 ### D. 파일 생성
 
@@ -136,9 +137,12 @@ python3 scripts/execute.py {task-name}        # 순차 실행
 python3 scripts/execute.py {task-name} --push  # 실행 후 push
 ```
 
+Windows에서는 `PYTHONUTF8=1`을 붙여 실행한다 (execute.py와 `scripts/test_execute.py` 모두). 이유: 기본 cp949 인코딩이 한글 step 파일을 깨뜨린다.
+
 execute.py가 자동으로 처리하는 것:
 
 - `feat-{task-name}` 브랜치 생성/checkout
+- 최신성 확인 — 작업 브랜치에 origin/main의 커밋이 빠져 있으면 중단한다 (배포 step이 옛 코드로 운영을 덮는 것을 막음). `git merge origin/main` 후 재실행한다
 - 가드레일 주입 — CLAUDE.md + docs/*.md 내용을 매 step 프롬프트에 포함
 - 컨텍스트 누적 — 완료된 step의 summary를 다음 step 프롬프트에 전달
 - 자가 교정 — 실패 시 최대 3회 재시도하며, 이전 에러 메시지를 프롬프트에 피드백

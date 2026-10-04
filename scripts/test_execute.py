@@ -379,6 +379,48 @@ class TestCheckoutBranch:
 
 
 # ---------------------------------------------------------------------------
+# _check_branch_freshness (mocked)
+# ---------------------------------------------------------------------------
+
+class TestCheckBranchFreshness:
+    def _mock_git(self, executor, behind=None, rev_list_ok=True):
+        calls = []
+        def fake_git(*args):
+            calls.append(args)
+            if args[0] == "rev-list":
+                return MagicMock(returncode=0 if rev_list_ok else 128, stdout=f"{behind}\n", stderr="")
+            return MagicMock(returncode=0, stdout="", stderr="")
+        executor._run_git = fake_git
+        return calls
+
+    def test_behind_origin_main_exits(self, executor, capsys):
+        calls = self._mock_git(executor, behind=10)
+        with pytest.raises(SystemExit) as exc_info:
+            executor._check_branch_freshness()
+        assert exc_info.value.code == 1
+        assert ("fetch", "--quiet", "origin", "main") in calls
+        assert ("rev-list", "--count", "HEAD..origin/main") in calls
+        assert "10" in capsys.readouterr().out
+
+    def test_up_to_date_continues(self, executor):
+        self._mock_git(executor, behind=0)
+        executor._check_branch_freshness()  # should not exit
+
+    def test_compare_failure_warns_and_continues(self, executor, capsys):
+        self._mock_git(executor, rev_list_ok=False)
+        executor._check_branch_freshness()  # origin이 없어도 실행은 막지 않는다
+        assert "WARN" in capsys.readouterr().out
+
+    def test_run_checks_freshness_after_checkout(self, executor):
+        order = []
+        for name in ("_print_header", "_check_blockers", "_checkout_branch", "_check_branch_freshness",
+                     "_load_guardrails", "_ensure_created_at", "_execute_all_steps", "_finalize"):
+            setattr(executor, name, (lambda n: lambda *a, **k: order.append(n))(name))
+        executor.run()
+        assert order.index("_check_branch_freshness") == order.index("_checkout_branch") + 1
+
+
+# ---------------------------------------------------------------------------
 # _commit_step (mocked)
 # ---------------------------------------------------------------------------
 
