@@ -113,19 +113,22 @@ describe("Claude 서비스", () => {
 });
 
 describe("가맹점 분류", () => {
-  it("205개 고유 가맹점을 100개씩 나누고 동시 호출을 최대 2개로 제한한다", async () => {
+  it("405개 고유 가맹점을 100개씩 나누고 동시 호출을 최대 3개로 제한한다", async () => {
     const pending: Array<(value: unknown) => void> = [];
     parse.mockImplementation(() => new Promise((resolve) => pending.push(resolve)));
-    const merchants = Array.from({ length: 205 }, (_, i) => `상점${i}`);
+    const merchants = Array.from({ length: 405 }, (_, i) => `상점${i}`);
     const task = classifyMerchants([...merchants, merchants[0]], "pro");
-    await vi.waitFor(() => expect(parse).toHaveBeenCalledTimes(2));
+    await vi.waitFor(() => expect(parse).toHaveBeenCalledTimes(3));
     expect(parse.mock.calls[0][0].messages[0].content).not.toContain("상점100");
     pending[0]({ stop_reason: "end_turn", parsed_output: { items: [] } });
-    await vi.waitFor(() => expect(parse).toHaveBeenCalledTimes(3));
-    expect(parse.mock.calls[2][0].messages[0].content).toContain("상점204");
+    await vi.waitFor(() => expect(parse).toHaveBeenCalledTimes(4));
     pending[1]({ stop_reason: "end_turn", parsed_output: { items: [] } });
+    await vi.waitFor(() => expect(parse).toHaveBeenCalledTimes(5));
+    expect(parse.mock.calls[4][0].messages[0].content).toContain("상점404");
     pending[2]({ stop_reason: "end_turn", parsed_output: { items: [] } });
-    expect(Object.keys(await task)).toHaveLength(205);
+    pending[3]({ stop_reason: "end_turn", parsed_output: { items: [] } });
+    pending[4]({ stop_reason: "end_turn", parsed_output: { items: [] } });
+    expect(Object.keys(await task)).toHaveLength(405);
     expect(parse.mock.calls.every(([request]) => request.output_config.effort === "low" && request.model === "claude-opus-5-5"
       && request.max_tokens === CLAUDE_MAX_TOKENS)).toBe(true);
   });
@@ -134,11 +137,12 @@ describe("가맹점 분류", () => {
     const pending: Array<(value: unknown) => void> = [];
     parse.mockRejectedValueOnce(new Anthropic.APIConnectionError({ message: "down" }))
       .mockImplementation(() => new Promise((resolve) => pending.push(resolve)));
-    const merchants = Array.from({ length: 205 }, (_, i) => `상점${i}`);
+    const merchants = Array.from({ length: 405 }, (_, i) => `상점${i}`);
     await expect(classifyMerchants(merchants, "free")).rejects.toMatchObject({ code: "llm_unavailable" });
     pending[0]({ stop_reason: "end_turn", parsed_output: { items: [] } });
+    pending[1]({ stop_reason: "end_turn", parsed_output: { items: [] } });
     await new Promise((resolve) => setTimeout(resolve, 0));
-    expect(parse).toHaveBeenCalledTimes(2);
+    expect(parse).toHaveBeenCalledTimes(3);
   });
 
   it("누락·알 수 없는 가맹점과 enum 밖 카테고리를 other로 둔다", async () => {
